@@ -1,0 +1,165 @@
+.profile {
+  padding: 20px;
+
+  & h2 {
+    text-decoration: underline;
+  }
+
+  & p {
+    text-align: right;
+    width: 100%;
+    padding: 10px 0;
+    color: grey;
+
+    & a {
+      color: inherit;
+      &:hover {
+        color: rgb(101, 101, 101);
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+.profile .main {
+  width: 70%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-evenly;
+}
+
+.profile .divider {
+  background-color: rgb(160, 160, 160);
+  width: 1px;
+  height: 250px;
+}
+
+.change-pass,
+.reset-pass {
+  width: 250px;
+  display: flex;
+  border: 1px solid wheat;
+  padding: 20px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+
+  & h3 {
+    color: rgb(0, 0, 158);
+    margin-bottom: 10px;
+    font-size: 20px;
+  }
+}
+
+.change-pass {
+  & form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    & input,
+    & button {
+      padding: 8px;
+      width: 175px;
+      font-size: 14px;
+      text-align: center;
+      background-color: transparent;
+      margin: 5px 0;
+      border: 1px solid;
+      border-radius: 20px;
+    }
+
+    & button {
+      border: 2px solid rgb(0, 170, 0);
+      color: rgb(0, 170, 0);
+      transition: 200ms ease;
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgb(0, 170, 0);
+        color: white;
+      }
+    }
+  }
+}
+
+.reset-pass {
+  & p {
+    text-align: justify;
+  }
+  & button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: transparent;
+    transition: 250ms ease;
+    outline: none;
+    border: 2px solid black;
+    cursor: pointer;
+
+    &:hover {
+      border-radius: 50px;
+      border-color: red;
+      color: red;
+    }
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .profile {
+    padding: 20px;
+    margin: 0;
+    border: none;
+    width: 100%;
+
+    & p {
+      text-align: center;
+      padding: 15px 0;
+    }
+  }
+
+  .profile .main {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .profile .divider {
+    width: 250px;
+    height: 1px;
+  }
+
+  .change-pass,
+  .reset-pass {
+    width: 300px;
+    border: none;
+
+    & h3 {
+      text-decoration: underline;
+      font-size: 22px;
+    }
+  }
+
+  .change-pass form {
+    & input,
+    & button {
+      padding: 12px;
+      width: 250px;
+      font-size: 18px;
+    }
+
+    & button {
+      background-color: rgb(0, 170, 0);
+      color: white;
+    }
+  }
+
+  .reset-pass button {
+    font-size: 18px;
+    border-radius: 20px;
+    border-color: red;
+    color: red;
+  }
+}

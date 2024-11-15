@@ -23,6 +23,7 @@
   font-size: 24px;
   font-weight: bold;
   color: #fff;
+  cursor: pointer;
   animation: neon 8s infinite;
 }
 
@@ -49,19 +50,6 @@
   display: flex;
   gap: 30px;
   align-items: center;
-
-  & .underline {
-    background-color: white;
-    border-color: white;
-    height: 1px;
-    width: 0;
-    transition: 300ms;
-  }
-
-  & .home:hover .underline,
-  & .add:hover .underline {
-    width: 100%;
-  }
 }
 
 .logout-btn {

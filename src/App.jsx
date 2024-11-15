@@ -6,18 +6,21 @@ import Navbar from "./components/navbar/Navbar.jsx";
 import Login from "./components/auth/Login.jsx";
 import ExpenseList from "./components/expense/ExpenseList.jsx";
 import AddExpense from "./components/expense/ExpenseForm.jsx";
+import ProfilePage from "./components/profile/ProfilePage.jsx";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import LoadingSpinner from "./components/Loading.jsx";
+import Homepage from "./home/Homepage.jsx";
 
 function App() {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false); // Set loading to false after auth check
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -31,7 +34,7 @@ function App() {
     }
   };
 
-  if (loading) return <div>Loading...</div>; // Show loading while checking auth status
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="container">
@@ -40,11 +43,17 @@ function App() {
       <Routes>
         {user ? (
           <>
-            <Route path="/" element={<ExpenseList userId={user?.uid} />} />
+            <Route path="/" element={<Homepage />} />
+            <Route
+              path="/expenses"
+              element={<ExpenseList userId={user?.uid} />}
+            />
             <Route
               path="/add-expense"
               element={<AddExpense userId={user?.uid} />}
             />
+            <Route path="/profile" element={<ProfilePage />} />{" "}
+            {/* Profile Route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (

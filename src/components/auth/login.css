@@ -41,6 +41,24 @@
       }
     }
   }
+
+  & .toggle-link {
+    color: black;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+
+    & .switch-btn {
+      color: red;
+      margin-left: 5px;
+      cursor: pointer;
+      font-weight: 700;
+
+      &:hover {
+        color: rgb(0, 119, 0);
+      }
+    }
+  }
 }
 
 @media screen and (max-width: 600px) {

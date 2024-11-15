@@ -9,6 +9,8 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import "./expense.css";
+import Loading from "../Loading";
+import { Link } from "react-router-dom";
 
 export default function ExpenseList({ userId }) {
   const [expenses, setExpenses] = useState([]);
@@ -105,11 +107,16 @@ export default function ExpenseList({ userId }) {
     setUpdatedAmount("");
   };
 
-  if (loading) return <div className="expense-list">Loading...</div>;
+  if (loading) return <Loading />;
   if (error) return <div className="expense-list">Error: {error}</div>;
 
   return (
     <div className="expense-list">
+      <div className="add-new-expense">
+        <Link to="/add-expense">
+          <i className="fa-solid fa-plus"></i>
+        </Link>
+      </div>
       {Object.keys(groupedExpenses).map((month) => (
         <div className="main" key={month}>
           <h3>{month}</h3>

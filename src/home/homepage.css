@@ -1,0 +1,31 @@
+.homepage {
+  width: 100%;
+  padding: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.homepage-content {
+  display: flex;
+  min-width: 70%;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.nav-card {
+  transition: 300ms ease;
+}
+
+.nav-card:hover {
+  transform: scale(1.05);
+}
+
+@media screen and (max-width: 600px) {
+  .homepage {
+    padding: 5px;
+  }
+  .homepage-content {
+    flex-direction: column;
+  }
+}

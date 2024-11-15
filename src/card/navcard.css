@@ -1,0 +1,40 @@
+.nav-card {
+  width: 175px;
+  height: 175px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  box-shadow: 0 0 5px -1px grey;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 20px;
+}
+
+.nav-card {
+  & .icon,
+  & .page-name {
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.nav-card .icon {
+  font-size: 55px;
+}
+
+.nav-card .page-name {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+@media screen and (max-width: 600px) {
+  .nav-card {
+    margin: 5px;
+    transform: scale(0.85);
+  }
+}

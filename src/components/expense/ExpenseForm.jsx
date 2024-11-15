@@ -38,7 +38,7 @@ export default function ExpenseForm({ userId }) {
     <div className="expense-form">
       <h2>Add Expense</h2>
       <form onSubmit={handleSubmit}>
-        <div>
+        <div className="input">
           <input
             type="text"
             placeholder="Description"
@@ -47,7 +47,7 @@ export default function ExpenseForm({ userId }) {
             required
           />
         </div>
-        <div className="group">
+        <div className="input group">
           <div>
             <input
               type="number"

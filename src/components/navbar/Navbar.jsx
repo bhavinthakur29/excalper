@@ -1,20 +1,23 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./navbar.css";
 
 function Navbar({ user, handleLogout }) {
+  const navigate = useNavigate();
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div className="logo">Expense Calculator</div>
+        <div className="logo" onClick={() => navigate("/")}>
+          Expense Calculator
+        </div>
         <div className="navbar-links">
           <ul>
             {user ? (
               <>
                 <li className="home">
-                  <Link to="/" aria-label="Go to home page">
+                  <Link to="/expenses" aria-label="Go to home page">
                     <i className="fa-solid fa-list-ul"></i>
-                    <span>Home</span>
+                    <span>My Expenses</span>
                   </Link>
                   <div className="underline"></div>
                 </li>
@@ -22,6 +25,13 @@ function Navbar({ user, handleLogout }) {
                   <Link to="/add-expense" aria-label="Add a new expense">
                     <i className="fa-solid fa-plus"></i>
                     <span>Add Expense</span>
+                  </Link>
+                  <div className="underline"></div>
+                </li>
+                <li className="profile-page">
+                  <Link to="/profile" aria-label="Profile">
+                    <i className="fa-solid fa-user"></i>
+                    <span>Profile</span>
                   </Link>
                   <div className="underline"></div>
                 </li>
