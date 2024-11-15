@@ -21,10 +21,17 @@ const Homepage = () => {
           decor={{ color: "red" }}
         />
         <NavCard
+          link="/users"
+          className="nav-card"
+          icon="fa-solid fa-user-plus"
+          name="Add User"
+          decor={{ color: "#ffb319" }}
+        />
+        <NavCard
           link="/profile"
           className="nav-card"
           icon="fa fa-user"
-          name="Profile"
+          name="My Profile"
           decor={{ color: "green" }}
         />
       </div>

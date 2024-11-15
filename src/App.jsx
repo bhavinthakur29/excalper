@@ -10,8 +10,9 @@ import ProfilePage from "./components/profile/ProfilePage.jsx";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import LoadingSpinner from "./components/Loading.jsx";
-import Homepage from "./home/Homepage.jsx";
+import LoadingSpinner from "./components/loadingSpinner/Loading.jsx";
+import Homepage from "./components/home/Homepage.jsx";
+import MyUsers from "./components/users/MyUsers.jsx";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -45,15 +46,22 @@ function App() {
           <>
             <Route path="/" element={<Homepage />} />
             <Route
+              path="/users"
+              element={<MyUsers userId={user?.uid} />}
+            />{" "}
+            {/* Pass userId */}
+            <Route
               path="/expenses"
-              element={<ExpenseList userId={user?.uid} />}
+              element={<ExpenseList userId={user?.uid} />} // Pass userId
             />
             <Route
               path="/add-expense"
-              element={<AddExpense userId={user?.uid} />}
+              element={<AddExpense userId={user?.uid} />} // Pass userId
             />
-            <Route path="/profile" element={<ProfilePage />} />{" "}
-            {/* Profile Route */}
+            <Route
+              path="/profile"
+              element={<ProfilePage userId={user?.uid} />} // Pass userId
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (

@@ -6,10 +6,11 @@ import {
   where,
   onSnapshot,
   doc,
+  getDoc,
   updateDoc,
 } from "firebase/firestore";
 import "./expense.css";
-import Loading from "../Loading";
+import Loading from "../loadingSpinner/Loading";
 import { Link } from "react-router-dom";
 
 export default function ExpenseList({ userId }) {
@@ -29,7 +30,7 @@ export default function ExpenseList({ userId }) {
       return;
     }
 
-    const q = query(collection(db, "expenses"), where("userId", "==", userId));
+    const q = query(collection(db, "users", userId, "expenses"));
 
     const unsubscribe = onSnapshot(
       q,
@@ -37,7 +38,7 @@ export default function ExpenseList({ userId }) {
         const expensesData = snapshot.docs.map((doc) => {
           const data = doc.data();
           const timestamp = data.timestamp
-            ? data.timestamp.toDate()
+            ? data.timestamp.toDate() // Use Firestore's timestamp field
             : new Date();
 
           return {
@@ -47,7 +48,7 @@ export default function ExpenseList({ userId }) {
           };
         });
 
-        expensesData.sort((a, b) => b.date - a.date);
+        expensesData.sort((a, b) => b.date - a.date); // Sort by date (most recent first)
 
         setExpenses(expensesData);
         setLoading(false);
@@ -67,7 +68,7 @@ export default function ExpenseList({ userId }) {
         setGroupedExpenses(grouped);
 
         const total = expensesData.reduce(
-          (sum, expense) => sum + expense.amount,
+          (sum, expense) => parseFloat(sum) + parseFloat(expense.amount),
           0
         );
         setTotalAmount(total);
@@ -89,7 +90,13 @@ export default function ExpenseList({ userId }) {
 
   const handleUpdateExpense = async () => {
     if (editingExpense) {
-      const expenseRef = doc(db, "expenses", editingExpense.id);
+      const expenseRef = doc(
+        db,
+        "users",
+        userId,
+        "expenses",
+        editingExpense.id
+      );
       await updateDoc(expenseRef, {
         description: updatedDescription,
         amount: updatedAmount,
@@ -127,19 +134,21 @@ export default function ExpenseList({ userId }) {
                 <p className="price">
                   {new Intl.NumberFormat("en-US", {
                     style: "currency",
-                    currency: "GBP",
+                    currency: "GBP", // Ensure correct currency formatting
                   }).format(expense.amount)}
                 </p>
               </div>
               <p className="person">For: {expense.person}</p>
               <p className="date">
                 <span>
+                  {/* Format the date based on Firestore timestamp */}
                   {expense.date.toLocaleString("en-US", {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
+                    hour12: true, // Ensure the time is in 12-hour format (AM/PM)
                   })}
                 </span>
                 <button onClick={() => handleEditClick(expense)}>
@@ -178,7 +187,7 @@ export default function ExpenseList({ userId }) {
         <p>
           {new Intl.NumberFormat("en-US", {
             style: "currency",
-            currency: "GBP",
+            currency: "GBP", // Ensure correct currency formatting
           }).format(totalAmount)}
         </p>
       </div>

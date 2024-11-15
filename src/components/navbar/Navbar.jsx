@@ -29,6 +29,13 @@ function Navbar({ user, handleLogout }) {
                   <div className="underline"></div>
                 </li>
                 <li className="profile-page">
+                  <Link to="/users" aria-label="Profile">
+                    <i className="fa-solid fa-user"></i>
+                    <span>My Users</span>
+                  </Link>
+                  <div className="underline"></div>
+                </li>
+                <li className="profile-page">
                   <Link to="/profile" aria-label="Profile">
                     <i className="fa-solid fa-user"></i>
                     <span>Profile</span>

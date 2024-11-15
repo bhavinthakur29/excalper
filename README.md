@@ -1,3 +1,0 @@
-# Excalper
-
-#### Personal Project

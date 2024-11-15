@@ -9,7 +9,7 @@ const NavCard = (props) => {
       <div className="icon" style={props.decor}>
         <i className={props.icon} />
       </div>
-      <div className="page-name" style={props.decor} onClick={() => nav}>
+      <div className="page-name" style={props.decor}>
         {props.name}
       </div>
     </div>
