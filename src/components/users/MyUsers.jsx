@@ -181,9 +181,7 @@ const MyUsers = ({ userId }) => {
                 <span className="person-name">{toTitleCase(person.name)}</span>
                 <span className="total-expenses">
                   {peopleWithExpenses[person.name]
-                    ? `Total Expenses: £${peopleWithExpenses[
-                        person.name
-                      ].toFixed(2)}`
+                    ? `£${peopleWithExpenses[person.name].toFixed(2)}`
                     : "£0"}
                 </span>
                 <button
