@@ -1,6 +1,6 @@
 import React from "react";
 import "./homepage.css";
-import NavCard from "../card/navCard";
+import NavCard from "../card/NavCard";
 
 const Homepage = () => {
   return (
