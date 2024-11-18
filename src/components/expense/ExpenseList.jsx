@@ -138,7 +138,9 @@ export default function ExpenseList({ userId }) {
                   }).format(expense.amount)}
                 </p>
               </div>
-              <p className="person">For: Self</p>
+              <p className="person">
+                For: <strong>Self</strong>
+              </p>
               {/* <p className="person">For: {expense.person}</p> */}
               <p className="date">
                 <span>

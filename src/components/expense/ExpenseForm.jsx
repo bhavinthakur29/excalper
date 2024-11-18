@@ -142,9 +142,10 @@ export default function ExpenseForm({ userId }) {
 
         {/* Display total expense for the selected person */}
         {person && (
-          <div className="total-expense">
+          <div className="total-expense" style={{marginBottom: '15px'}}>
             <p>
-              Total Expense for {person}:{" "}
+              {/* Total Expense for {person}:{" "} */}
+              Total Expense for <strong>Self</strong>:{" "}
               {new Intl.NumberFormat("en-US", {
                 style: "currency",
                 currency: "GBP", // Ensure correct currency formatting
