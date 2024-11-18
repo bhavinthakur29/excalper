@@ -100,12 +100,12 @@ a {
 }
 
 /* On mouse-over, add a grey background color */
-.container:hover input ~ .checkmark {
+.pass-visibility .checkbox:hover input ~ .checkmark {
   background-color: #ccc;
 }
 
 /* When the checkbox is checked, add a blue background */
-.container input:checked ~ .checkmark {
+.pass-visibility .checkbox input:checked ~ .checkmark {
   background-color: green;
 }
 
