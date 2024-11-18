@@ -103,7 +103,7 @@ export default function Login() {
               <span className="switch-btn">Log in</span>
             </>
           ) : (
-            <div className="login-bottom">
+            <span className="login-bottom">
               <span>
                 Don't have an account?
                 <span className="switch-btn">Register</span>
@@ -111,7 +111,7 @@ export default function Login() {
               <span className="pass-reset">
                 Forgot password? <Link to="/password-reset">Click here</Link>
               </span>
-            </div>
+            </span>
           )}
         </p>
       </form>
