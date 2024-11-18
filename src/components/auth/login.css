@@ -47,15 +47,40 @@
     text-align: center;
     margin-top: 10px;
     font-size: 14px;
-
+    
     & .switch-btn {
       color: red;
       margin-left: 5px;
       cursor: pointer;
       font-weight: 700;
-
+      transition: 200ms ease;
+      
       &:hover {
-        color: rgb(0, 119, 0);
+        color: rgb(186, 0, 0);
+      }
+    }
+  }
+}
+
+.login-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  
+  & .pass-reset {
+    border-top: 1px solid;
+    margin-top: 10px;
+    padding-top: 10px;
+    
+    & a {
+      font-weight: 700;
+      color: rgb(0, 181, 0);
+      transition: 200ms ease;
+      
+      &:hover {
+        color: rgb(0, 138, 0);
+
       }
     }
   }

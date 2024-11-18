@@ -19,7 +19,8 @@ a {
 .expense-list,
 .expense-form,
 .profile,
-.my-users {
+.my-users,
+.password-reset {
   margin: 50px;
   border: 1px solid grey;
   display: flex;

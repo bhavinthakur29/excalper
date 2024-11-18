@@ -7,6 +7,7 @@ import {
 import { collection, addDoc } from "firebase/firestore"; // Import Firestore methods
 import { toast } from "react-toastify";
 import "./login.css";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -102,10 +103,15 @@ export default function Login() {
               <span className="switch-btn">Log in</span>
             </>
           ) : (
-            <>
-              Don't have an account?
-              <span className="switch-btn">Register</span>
-            </>
+            <div className="login-bottom">
+              <span>
+                Don't have an account?
+                <span className="switch-btn">Register</span>
+              </span>
+              <span className="pass-reset">
+                Forgot password? <Link to="/password-reset">Click here</Link>
+              </span>
+            </div>
           )}
         </p>
       </form>

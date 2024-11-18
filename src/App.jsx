@@ -13,6 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 import LoadingSpinner from "./components/loadingSpinner/Loading.jsx";
 import Homepage from "./components/home/Homepage.jsx";
 import MyUsers from "./components/users/MyUsers.jsx";
+import PasswordReset from "./components/passwordReset/PasswordReset.jsx";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -67,6 +68,7 @@ function App() {
         ) : (
           <>
             <Route path="/login" element={<Login />} />
+            <Route path="/password-reset" element={<PasswordReset />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </>
         )}
