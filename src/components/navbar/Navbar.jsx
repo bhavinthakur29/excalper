@@ -30,7 +30,7 @@ function Navbar({ user, handleLogout }) {
                 </li>
                 <li className="profile-page">
                   <Link to="/users" aria-label="Profile">
-                    <i className="fa-solid fa-user"></i>
+                    <i className="fa-solid fa-users"></i>
                     <span>My Users</span>
                   </Link>
                   <div className="underline"></div>

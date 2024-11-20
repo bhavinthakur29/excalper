@@ -101,13 +101,12 @@
   color: black;
 }
 
-
 .people-list li {
   width: 100%;
   display: flex;
   align-items: center;
   color: rgb(0, 0, 170);
-  
+
   & .list-style {
     width: 5%;
   }
@@ -138,4 +137,30 @@
 
 .my-users .delete-button:hover {
   background-color: #e60000;
+}
+
+@media screen and (max-width: 600px) {
+  .add-person-section form {
+    width: 100%;
+  }
+
+  .add-person-section form input {
+    padding: 10px 20px;
+  }
+
+  .add-person-section form input[type="submit"] {
+    width: 100%;
+    border-radius: 3px;
+  }
+
+  .people-section,
+  .people-list {
+    width: 100%;
+  }
+
+  .my-users .delete-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 }

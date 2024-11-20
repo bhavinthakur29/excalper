@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../../utils/firebase";
+import { auth, db } from "../../utils/firebase";
 import {
   collection,
   getDocs,
@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import "./expense.css";
+import toTitleCase from "../../functions/toTitleCase";
 
 export default function ExpenseForm({ userId }) {
   const [description, setDescription] = useState("");
@@ -142,10 +143,16 @@ export default function ExpenseForm({ userId }) {
 
         {/* Display total expense for the selected person */}
         {person && (
-          <div className="total-expense" style={{marginBottom: '15px'}}>
+          <div className="total-expense" style={{ marginBottom: "15px" }}>
             <p>
               {/* Total Expense for {person}:{" "} */}
-              Total Expense for <strong>Self</strong>:{" "}
+              Total Expense for{" "}
+              <strong>
+                {person === auth.currentUser?.uid
+                  ? "Self"
+                  : toTitleCase(person)}
+              </strong>
+              :{" "}
               {new Intl.NumberFormat("en-US", {
                 style: "currency",
                 currency: "GBP", // Ensure correct currency formatting

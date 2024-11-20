@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../../utils/firebase";
+import { auth, db } from "../../utils/firebase";
 import {
   collection,
   query,
@@ -12,6 +12,7 @@ import {
 import "./expense.css";
 import Loading from "../loadingSpinner/Loading";
 import { Link } from "react-router-dom";
+import toTitleCase from "../../functions/toTitleCase";
 
 export default function ExpenseList({ userId }) {
   const [expenses, setExpenses] = useState([]);
@@ -138,10 +139,14 @@ export default function ExpenseList({ userId }) {
                   }).format(expense.amount)}
                 </p>
               </div>
+
               <p className="person">
-                For: <strong>Self</strong>
+                For:{" "}
+                {expense.person === auth.currentUser?.uid
+                  ? "Self"
+                  : toTitleCase(expense.person)}
               </p>
-              {/* <p className="person">For: {expense.person}</p> */}
+
               <p className="date">
                 <span>
                   {/* Format the date based on Firestore timestamp */}

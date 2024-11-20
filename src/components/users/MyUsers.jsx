@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import "./myUsers.css";
+import toTitleCase from "../../functions/toTitleCase";
 
 const MyUsers = ({ userId }) => {
   const [people, setPeople] = useState([]);
@@ -70,13 +71,6 @@ const MyUsers = ({ userId }) => {
   };
 
   // To Capitalize the name
-  function toTitleCase(str) {
-    return str
-      .toLowerCase()
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  }
 
   const handleAddPerson = async (e) => {
     e.preventDefault();
