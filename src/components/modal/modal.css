@@ -45,16 +45,6 @@
   cursor: pointer;
 }
 
-.modal-btn.confirm {
-  background-color: #4caf50;
-  color: white;
-}
-
-.modal-btn.cancel {
-  background-color: #f44336;
-  color: white;
-}
-
 /* Media query for screens with max-width: 600px */
 @media (max-width: 600px) {
   .modal-container {

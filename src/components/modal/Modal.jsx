@@ -17,11 +17,11 @@ const Modal = ({
         <h3 className="modal-title">{title}</h3>
         <div className="modal-message">{message}</div>
         <div className="modal-buttons">
-          <button className="modal-btn confirm" onClick={onConfirm}>
+          <button className="modal-btn confirm-btn" onClick={onConfirm}>
             {confirmText || "Confirm"}
           </button>
           {cancelVis == cancelBtn && (
-            <button className="modal-btn cancel" onClick={onCancel}>
+            <button className="modal-btn cancel-btn" onClick={onCancel}>
               Cancel
             </button>
           )}

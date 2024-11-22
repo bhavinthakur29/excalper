@@ -112,7 +112,7 @@ const MyUsers = ({ userId }) => {
         ? `${person.name} has total expenses of £${totalExpenses.toFixed(
             2
           )}. Are you sure you want to delete this user?`
-        : `Are you sure you want to delete ${person.name}?`;
+        : ` Are you sure you want to delete ${person.name}?`;
     setModalState({ isOpen: true, person, message });
   };
 
@@ -253,9 +253,11 @@ const MyUsers = ({ userId }) => {
           title="Confirm Deletion"
           message={modalState.message}
           onConfirm={handleDeletePerson}
+          confirmText="Delete"
           onCancel={() =>
             setModalState({ isOpen: false, person: null, message: "" })
           }
+          cancelBtn={true}
         />
       )}
 

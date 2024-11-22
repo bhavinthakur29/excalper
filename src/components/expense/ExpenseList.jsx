@@ -3,16 +3,17 @@ import { auth, db } from "../../utils/firebase";
 import {
   collection,
   query,
-  where,
   onSnapshot,
   doc,
-  getDoc,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import "./expense.css";
 import Loading from "../loadingSpinner/Loading";
 import { Link } from "react-router-dom";
 import toTitleCase from "../../functions/toTitleCase";
+import Modal from "../modal/Modal";
+import { toast } from "react-toastify";
 
 export default function ExpenseList({ userId }) {
   const [expenses, setExpenses] = useState([]);
@@ -23,6 +24,7 @@ export default function ExpenseList({ userId }) {
   const [editingExpense, setEditingExpense] = useState(null);
   const [updatedDescription, setUpdatedDescription] = useState("");
   const [updatedAmount, setUpdatedAmount] = useState("");
+  const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
 
   useEffect(() => {
     if (!userId) {
@@ -115,6 +117,29 @@ export default function ExpenseList({ userId }) {
     setUpdatedAmount("");
   };
 
+  const handleDeleteExpense = async () => {
+    if (editingExpense) {
+      try {
+        const expenseRef = doc(
+          db,
+          "users",
+          userId,
+          "expenses",
+          editingExpense.id
+        );
+        await deleteDoc(expenseRef);
+        setEditingExpense(null);
+        setConfirmDeleteVisible(false);
+        setUpdatedDescription("");
+        setUpdatedAmount("");
+        toast.success("Expense deleted successfully");
+      } catch (error) {
+        setError("Failed to delete expense. Please try again.");
+        toast.error("Some error occured");
+      }
+    }
+  };
+
   if (loading) return <Loading />;
   if (error) return <div className="expense-list">Error: {error}</div>;
 
@@ -184,10 +209,31 @@ export default function ExpenseList({ userId }) {
             onChange={(e) => setUpdatedAmount(Number(e.target.value))}
           />
           <div className="btn-group">
-            <button onClick={handleUpdateExpense}>Update</button>
-            <button onClick={handleCancelEdit}>Cancel</button>
+            <button className="update-btn" onClick={handleUpdateExpense}>
+              Update
+            </button>
+            <button className="cancel-btn" onClick={handleCancelEdit}>
+              Cancel
+            </button>
+            <button
+              className="delete-btn"
+              onClick={() => setConfirmDeleteVisible(true)}
+            >
+              Delete
+            </button>
           </div>
         </div>
+      )}
+
+      {confirmDeleteVisible && (
+        <Modal
+          title="Confirm Delete"
+          message={`Are you sure you want to delete "${editingExpense.description}"?`}
+          onConfirm={handleDeleteExpense}
+          onCancel={() => setConfirmDeleteVisible(false)}
+          cancelBtn={true}
+          confirmText="Delete"
+        />
       )}
 
       <div className="total">

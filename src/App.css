@@ -133,3 +133,34 @@ a {
   -ms-transform: rotate(45deg);
   transform: rotate(45deg);
 }
+
+.update-btn,
+.confirm-btn,
+.cancel-btn,
+.delete-btn {
+  color: white !important;
+}
+
+.update-btn, .confirm-btn {
+  background-color: #4caf50 !important;
+
+  &:hover {
+    background-color: #3e8e41 !important;
+  }
+}
+
+.cancel-btn {
+  background-color: grey !important;
+
+  &:hover {
+    background-color: rgb(96, 96, 96) !important;
+  }
+}
+
+.delete-btn {
+  background-color: red !important;
+
+  &:hover {
+    background-color: rgb(192, 0, 0) !important;
+  }
+}
