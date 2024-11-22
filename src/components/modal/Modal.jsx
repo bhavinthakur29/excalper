@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import "./modal.css";
 
 const Modal = ({
@@ -9,7 +9,7 @@ const Modal = ({
   cancelBtn,
   confirmText,
 }) => {
-  const [cancelVis, setCancelVis] = useState(true);
+  const cancelVis = true;
 
   return (
     <div className="modal-overlay">
