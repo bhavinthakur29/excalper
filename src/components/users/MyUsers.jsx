@@ -13,20 +13,30 @@ import {
 import { toast } from "react-toastify";
 import "./myUsers.css";
 import toTitleCase from "../../functions/toTitleCase";
+import Modal from "../modal/Modal";
 
 const MyUsers = ({ userId }) => {
   const [people, setPeople] = useState([]);
   const [newPerson, setNewPerson] = useState("");
   const [error, setError] = useState(null);
   const [peopleWithExpenses, setPeopleWithExpenses] = useState({});
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    person: null,
+    message: "",
+  });
+  const [infoModalState, setInfoModalState] = useState({
+    isOpen: false,
+    message: "",
+  });
 
+  // Fetch people and their expenses
   useEffect(() => {
     if (!userId) {
       setError("No user ID found.");
       return;
     }
 
-    // Fetch people list from Firestore
     const fetchPeople = async () => {
       try {
         const peopleRef = collection(db, "users", userId, "people");
@@ -37,7 +47,6 @@ const MyUsers = ({ userId }) => {
         }));
         setPeople(peopleList.sort((a, b) => a.name.localeCompare(b.name)));
 
-        // Fetch total expenses for each person
         peopleList.forEach(async (person) => {
           await fetchTotalExpenses(person.name);
         });
@@ -49,13 +58,12 @@ const MyUsers = ({ userId }) => {
     fetchPeople();
   }, [userId]);
 
-  // Fetch total expenses for a person
   const fetchTotalExpenses = async (person) => {
     try {
       const expensesRef = collection(db, "users", userId, "expenses");
       const expensesQuery = query(expensesRef, where("person", "==", person));
-
       const expensesSnapshot = await getDocs(expensesQuery);
+
       const totalExpenses = expensesSnapshot.docs.reduce(
         (acc, doc) => acc + doc.data().amount,
         0
@@ -70,25 +78,25 @@ const MyUsers = ({ userId }) => {
     }
   };
 
-  // To Capitalize the name
-
   const handleAddPerson = async (e) => {
     e.preventDefault();
-    if (newPerson.trim() && !people.some((p) => p.name === newPerson)) {
+    const formattedPerson = toTitleCase(newPerson.trim());
+    if (formattedPerson && !people.some((p) => p.name === formattedPerson)) {
       try {
         const peopleRef = collection(db, "users", userId, "people");
         const docRef = await addDoc(peopleRef, {
-          name: newPerson,
+          name: formattedPerson,
           timestamp: serverTimestamp(),
         });
+
         setPeople((prevPeople) =>
-          [...prevPeople, { id: docRef.id, name: newPerson }].sort((a, b) =>
-            a.name.localeCompare(b.name)
+          [...prevPeople, { id: docRef.id, name: formattedPerson }].sort(
+            (a, b) => a.name.localeCompare(b.name)
           )
         );
         setNewPerson("");
         toast.success("Person added successfully!");
-        fetchTotalExpenses(newPerson); // Fetch total expenses for newly added person
+        fetchTotalExpenses(formattedPerson);
       } catch (error) {
         toast.error("Failed to add person. Please try again.");
       }
@@ -97,31 +105,23 @@ const MyUsers = ({ userId }) => {
     }
   };
 
-  const handleDeletePerson = async (person) => {
+  const confirmDeletePerson = (person) => {
     const totalExpenses = peopleWithExpenses[person.name] || 0;
+    const message =
+      totalExpenses > 0
+        ? `${person.name} has total expenses of £${totalExpenses.toFixed(
+            2
+          )}. Are you sure you want to delete this user?`
+        : `Are you sure you want to delete ${person.name}?`;
+    setModalState({ isOpen: true, person, message });
+  };
 
-    // First confirmation for deletion
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${person.name}?`
-    );
-    if (!confirmDelete) return;
-
-    // Second confirmation if the person has non-zero total expenses
-    if (totalExpenses > 0) {
-      const confirmExpenseDelete = window.confirm(
-        `${person.name} has total expenses of £${totalExpenses.toFixed(
-          2
-        )}. Are you sure you want to delete this user?`
-      );
-      if (!confirmExpenseDelete) return;
-    }
-
+  const handleDeletePerson = async () => {
+    const { person } = modalState;
     try {
-      // Delete person from Firestore
       const personDoc = doc(db, "users", userId, "people", person.id);
       await deleteDoc(personDoc);
 
-      // Optionally delete associated expenses
       const expensesRef = collection(db, "users", userId, "expenses");
       const expensesQuery = query(
         expensesRef,
@@ -137,12 +137,59 @@ const MyUsers = ({ userId }) => {
       toast.success(`${person.name} and their associated data were deleted.`);
     } catch (error) {
       toast.error("Failed to delete user. Please try again.");
+    } finally {
+      setModalState({ isOpen: false, person: null, message: "" });
     }
   };
+
+  const calculateTotalAmount = () => {
+    return Object.values(peopleWithExpenses).reduce(
+      (acc, expense) => acc + expense,
+      0
+    );
+  };
+
+  const totalAmount = calculateTotalAmount().toFixed(2);
+
+  const calculateBalance = (userExpense) => {
+    const contri = totalAmount / people.length;
+    if (contri - userExpense > 0) {
+      return `Pay £${(contri - userExpense).toFixed(2)}`;
+    } else if (contri - userExpense < 0) {
+      return `Receive £${(contri - userExpense).toFixed(2) * -1}`;
+    } else {
+      return "No dues left";
+    }
+  };
+
+  const userContribution = () => (
+    <div className="contribution-modal">
+      <h4>Total Amount: £{totalAmount}</h4>
+      <h5>
+        Each Member Contribution: £{(totalAmount / people.length).toFixed(2)}
+      </h5>
+      <ul className="user-contri-list">
+        <li className="list-headings">
+          <p className="contri-user-name">Name</p>
+          <p className="due">Pay / Receive</p>
+        </li>
+        {people.map((person) => (
+          <li key={person.id}>
+            <p className="contri-user-name">{toTitleCase(person.name)}</p>
+            <p className="due">
+              {calculateBalance(peopleWithExpenses[person.name])}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 
   return (
     <div className="my-users">
       <h2>My Users</h2>
+
+      {/* Add Person Section */}
       <div className="add-person-section">
         <form onSubmit={handleAddPerson}>
           <input
@@ -157,6 +204,7 @@ const MyUsers = ({ userId }) => {
 
       {error && <p className="error-message">{error}</p>}
 
+      {/* People List */}
       <div className="people-section">
         <h3>People Added</h3>
         {people.length === 0 ? (
@@ -169,9 +217,6 @@ const MyUsers = ({ userId }) => {
             </li>
             {people.map((person) => (
               <li key={person.id}>
-                <span className="list-style">
-                  <i className="fa-solid fa-caret-right"></i>
-                </span>
                 <span className="person-name">{toTitleCase(person.name)}</span>
                 <span className="total-expenses">
                   {peopleWithExpenses[person.name]
@@ -180,7 +225,7 @@ const MyUsers = ({ userId }) => {
                 </span>
                 <button
                   className="delete-button"
-                  onClick={() => handleDeletePerson(person)}
+                  onClick={() => confirmDeletePerson(person)}
                 >
                   <i className="fa fa-trash" />
                 </button>
@@ -188,7 +233,41 @@ const MyUsers = ({ userId }) => {
             ))}
           </ul>
         )}
+        <hr />
+        <button
+          className="calculate-contribution"
+          onClick={() =>
+            setInfoModalState({
+              isOpen: true,
+              message: userContribution(),
+            })
+          }
+        >
+          Calculate Contribution
+        </button>
       </div>
+
+      {/* Modal */}
+      {modalState.isOpen && (
+        <Modal
+          title="Confirm Deletion"
+          message={modalState.message}
+          onConfirm={handleDeletePerson}
+          onCancel={() =>
+            setModalState({ isOpen: false, person: null, message: "" })
+          }
+        />
+      )}
+
+      {/* Info Modal */}
+      {infoModalState.isOpen && (
+        <Modal
+          title="Contribution dues"
+          message={infoModalState.message}
+          onConfirm={() => setInfoModalState({ isOpen: false })}
+          onCancel={() => setInfoModalState({ isOpen: false })}
+        />
+      )}
     </div>
   );
 };

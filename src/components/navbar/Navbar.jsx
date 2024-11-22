@@ -1,9 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./navbar.css";
+import Modal from "../modal/Modal";
 
 function Navbar({ user, handleLogout }) {
   const navigate = useNavigate();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const confirmLogout = () => {
+    setIsLogoutModalOpen(false);
+    handleLogout(); // Call the provided handleLogout function
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -45,7 +53,7 @@ function Navbar({ user, handleLogout }) {
                 <li>
                   <button
                     className="logout-btn"
-                    onClick={handleLogout}
+                    onClick={() => setIsLogoutModalOpen(true)}
                     aria-label="Logout from the application"
                   >
                     <i className="fa-solid fa-right-from-bracket"></i>
@@ -63,6 +71,16 @@ function Navbar({ user, handleLogout }) {
           </ul>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {isLogoutModalOpen && (
+        <Modal
+          title="Confirm Logout"
+          message="Are you sure you want to log out?"
+          onConfirm={confirmLogout}
+          onCancel={() => setIsLogoutModalOpen(false)}
+        />
+      )}
     </nav>
   );
 }

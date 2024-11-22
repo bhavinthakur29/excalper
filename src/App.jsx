@@ -14,6 +14,7 @@ import LoadingSpinner from "./components/loadingSpinner/Loading.jsx";
 import Homepage from "./components/home/Homepage.jsx";
 import MyUsers from "./components/users/MyUsers.jsx";
 import PasswordReset from "./components/passwordReset/PasswordReset.jsx";
+import Contribution from "./components/contribution/Contribution.jsx";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -63,6 +64,7 @@ function App() {
               path="/profile"
               element={<ProfilePage userId={user?.uid} />} // Pass userId
             />
+            <Route path="/users/contribution" element={<Contribution />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (

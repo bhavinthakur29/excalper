@@ -125,6 +125,52 @@
   margin-bottom: 10px;
 }
 
+/* contribution modal */
+.contribution-modal {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+  max-height: 365px;
+  overflow-y: scroll;
+}
+
+.contribution-modal .user-contri-list {
+  width: 90%;
+  list-style-type: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
+.contribution-modal .user-contri-list li {
+  display: flex;
+  border-bottom: 1px solid grey;
+  padding: 5px 0 5px 10px;
+  text-align: left;
+  background-color: rgb(227, 227, 227);
+}
+
+.contribution-modal .contri-user-name {
+  width: 45%;
+}
+
+.contribution-modal .due {
+  width: 5 5%;
+}
+
+.contribution-modal .user-contri-list .list-headings {
+  font-weight: 700;
+  background-color: rgb(118, 118, 118);
+  color: white;
+  padding: 10px 0;
+  padding: 10px 0 10px 10px;
+}
+
+/* My Users  */
+
 .my-users .delete-button {
   margin-left: 10px;
   color: #fff;
@@ -137,6 +183,30 @@
 
 .my-users .delete-button:hover {
   background-color: #e60000;
+}
+
+.my-users hr {
+  width: 50%;
+  margin: 10px 0;
+}
+
+.calculate-contribution {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: rgb(16, 202, 16);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  &:active {
+    transform: scale(0.9);
+  }
 }
 
 @media screen and (max-width: 600px) {
@@ -162,5 +232,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
+  }
+
+  .calculate-contribution {
+    font-size: 18px;
   }
 }
