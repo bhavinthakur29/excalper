@@ -79,6 +79,7 @@ function Navbar({ user, handleLogout }) {
           message="Are you sure you want to log out?"
           onConfirm={confirmLogout}
           onCancel={() => setIsLogoutModalOpen(false)}
+          cancelBtn={true}
         />
       )}
     </nav>

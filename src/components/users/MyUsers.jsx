@@ -266,6 +266,8 @@ const MyUsers = ({ userId }) => {
           message={infoModalState.message}
           onConfirm={() => setInfoModalState({ isOpen: false })}
           onCancel={() => setInfoModalState({ isOpen: false })}
+          cancelBtn={false}
+          confirmText="Close"
         />
       )}
     </div>
