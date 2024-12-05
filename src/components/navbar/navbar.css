@@ -97,11 +97,12 @@
   .navbar .logo {
     text-align: center;
     font-size: 35px;
-    border-bottom: 2px solid grey;
+    border-bottom: 1px solid grey;
     padding-bottom: 10px;
   }
 
   .navbar-links ul {
+    display: none; /* =============================================== Change it to display the navbar links */
     margin-top: 10px;
     width: 100vw;
     justify-content: space-evenly;

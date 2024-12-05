@@ -20,7 +20,9 @@ a {
 .expense-form,
 .profile,
 .my-users,
-.password-reset {
+.password-reset,
+.manage-password,
+.settings {
   margin: 50px;
   border: 1px solid grey;
   display: flex;
@@ -36,7 +38,7 @@ a {
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: calc(100vh - (70px + 70px));
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -162,5 +164,19 @@ a {
 
   &:hover {
     background-color: rgb(192, 0, 0) !important;
+  }
+}
+
+.phone-only {
+  display: none;
+}
+
+@media screen and (max-width: 600px) {
+  .container {
+    min-height: calc(100vh - (70px + 70px));
+  }
+
+  .phone-only{
+    display: block;
   }
 }

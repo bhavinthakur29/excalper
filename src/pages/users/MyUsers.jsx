@@ -13,7 +13,8 @@ import {
 import { toast } from "react-toastify";
 import "./myUsers.css";
 import toTitleCase from "../../functions/toTitleCase";
-import Modal from "../modal/Modal";
+import Modal from "../../components/modal/Modal";
+import BackNav from "../../components/backNav/BackNav";
 
 const MyUsers = ({ userId }) => {
   const [people, setPeople] = useState([]);
@@ -186,93 +187,98 @@ const MyUsers = ({ userId }) => {
   );
 
   return (
-    <div className="my-users">
-      <h2>My Users</h2>
+    <>
+      <BackNav />
+      <div className="my-users">
+        <h2>My Users</h2>
 
-      {/* Add Person Section */}
-      <div className="add-person-section">
-        <form onSubmit={handleAddPerson}>
-          <input
-            type="text"
-            placeholder="New Person Name"
-            value={newPerson}
-            onChange={(e) => setNewPerson(e.target.value)}
-          />
-          <input type="submit" value="Add Person" />
-        </form>
-      </div>
+        {/* Add Person Section */}
+        <div className="add-person-section">
+          <form onSubmit={handleAddPerson}>
+            <input
+              type="text"
+              placeholder="New Person Name"
+              value={newPerson}
+              onChange={(e) => setNewPerson(e.target.value)}
+            />
+            <input type="submit" value="Add Person" />
+          </form>
+        </div>
 
-      {error && <p className="error-message">{error}</p>}
+        {error && <p className="error-message">{error}</p>}
 
-      {/* People List */}
-      <div className="people-section">
-        <h3>People Added</h3>
-        {people.length === 0 ? (
-          <p>No people added yet.</p>
-        ) : (
-          <ul className="people-list">
-            <li className="list-headings">
-              <span className="person-name">Name</span>
-              <span className="total-expenses">Amt</span>
-            </li>
-            {people.map((person) => (
-              <li key={person.id}>
-                <span className="person-name">{toTitleCase(person.name)}</span>
-                <span className="total-expenses">
-                  {peopleWithExpenses[person.name]
-                    ? `£${peopleWithExpenses[person.name].toFixed(2)}`
-                    : "£0"}
-                </span>
-                <button
-                  className="delete-button"
-                  onClick={() => confirmDeletePerson(person)}
-                >
-                  <i className="fa fa-trash" />
-                </button>
+        {/* People List */}
+        <div className="people-section">
+          <h3>People Added</h3>
+          {people.length === 0 ? (
+            <p>No people added yet.</p>
+          ) : (
+            <ul className="people-list">
+              <li className="list-headings">
+                <span className="person-name">Name</span>
+                <span className="total-expenses">Amt</span>
               </li>
-            ))}
-          </ul>
+              {people.map((person) => (
+                <li key={person.id}>
+                  <span className="person-name">
+                    {toTitleCase(person.name)}
+                  </span>
+                  <span className="total-expenses">
+                    {peopleWithExpenses[person.name]
+                      ? `£${peopleWithExpenses[person.name].toFixed(2)}`
+                      : "£0"}
+                  </span>
+                  <button
+                    className="delete-button"
+                    onClick={() => confirmDeletePerson(person)}
+                  >
+                    <i className="fa fa-trash" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <hr />
+          <button
+            className="calculate-contribution"
+            onClick={() =>
+              setInfoModalState({
+                isOpen: true,
+                message: userContribution(),
+              })
+            }
+          >
+            Calculate Contribution
+          </button>
+        </div>
+
+        {/* Modal */}
+        {modalState.isOpen && (
+          <Modal
+            title="Confirm Deletion"
+            message={modalState.message}
+            onConfirm={handleDeletePerson}
+            confirmText="Delete"
+            onCancel={() =>
+              setModalState({ isOpen: false, person: null, message: "" })
+            }
+            cancelBtn={true}
+          />
         )}
-        <hr />
-        <button
-          className="calculate-contribution"
-          onClick={() =>
-            setInfoModalState({
-              isOpen: true,
-              message: userContribution(),
-            })
-          }
-        >
-          Calculate Contribution
-        </button>
+
+        {/* Info Modal */}
+        {infoModalState.isOpen && (
+          <Modal
+            title="Contribution dues"
+            message={infoModalState.message}
+            onConfirm={() => setInfoModalState({ isOpen: false })}
+            onCancel={() => setInfoModalState({ isOpen: false })}
+            cancelBtn={false}
+            confirmText="Close"
+          />
+        )}
       </div>
-
-      {/* Modal */}
-      {modalState.isOpen && (
-        <Modal
-          title="Confirm Deletion"
-          message={modalState.message}
-          onConfirm={handleDeletePerson}
-          confirmText="Delete"
-          onCancel={() =>
-            setModalState({ isOpen: false, person: null, message: "" })
-          }
-          cancelBtn={true}
-        />
-      )}
-
-      {/* Info Modal */}
-      {infoModalState.isOpen && (
-        <Modal
-          title="Contribution dues"
-          message={infoModalState.message}
-          onConfirm={() => setInfoModalState({ isOpen: false })}
-          onCancel={() => setInfoModalState({ isOpen: false })}
-          cancelBtn={false}
-          confirmText="Close"
-        />
-      )}
-    </div>
+    </>
   );
 };
 

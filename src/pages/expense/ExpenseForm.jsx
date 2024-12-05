@@ -11,6 +11,7 @@ import {
 import { toast } from "react-toastify";
 import "./expense.css";
 import toTitleCase from "../../functions/toTitleCase";
+import BackNav from "../../components/backNav/BackNav";
 
 export default function ExpenseForm({ userId }) {
   const [description, setDescription] = useState("");
@@ -95,78 +96,81 @@ export default function ExpenseForm({ userId }) {
   };
 
   return (
-    <div className="expense-form">
-      <h2>Add Expense</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="input">
-          <input
-            type="text"
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-          />
-        </div>
-        <div className="input">
-          <input
-            type="number"
-            placeholder="Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-            min="0"
-            step="any"
-          />
-        </div>
-
-        {people.length > 0 ? (
+    <>
+      <BackNav />
+      <div className="expense-form">
+        <h2>Add Expense</h2>
+        <form onSubmit={handleSubmit}>
           <div className="input">
-            <select
-              value={person}
-              onChange={(e) => setPerson(e.target.value)}
+            <input
+              type="text"
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               required
-            >
-              <option value="">Select a person</option>
-              {people.map((p, index) => (
-                <option key={index} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+            />
           </div>
-        ) : (
           <div className="input">
-            {/* <input type="text" value={userId} readOnly /> */}
-            <input type="text" value="Self" readOnly />
+            <input
+              type="number"
+              placeholder="Amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              min="0"
+              step="any"
+            />
           </div>
-        )}
 
-        {/* Display total expense for the selected person */}
-        {person && (
-          <div className="total-expense" style={{ marginBottom: "15px" }}>
-            <p>
-              {/* Total Expense for {person}:{" "} */}
-              Total Expense for{" "}
-              <strong>
-                {person === auth.currentUser?.uid
-                  ? "Self"
-                  : toTitleCase(person)}
-              </strong>
-              :{" "}
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "GBP", // Ensure correct currency formatting
-              }).format(totalExpense)}
-            </p>
+          {people.length > 0 ? (
+            <div className="input">
+              <select
+                value={person}
+                onChange={(e) => setPerson(e.target.value)}
+                required
+              >
+                <option value="">Select a person</option>
+                {people.map((p, index) => (
+                  <option key={index} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="input">
+              {/* <input type="text" value={userId} readOnly /> */}
+              <input type="text" value="Self" readOnly />
+            </div>
+          )}
+
+          {/* Display total expense for the selected person */}
+          {person && (
+            <div className="total-expense" style={{ marginBottom: "15px" }}>
+              <p>
+                {/* Total Expense for {person}:{" "} */}
+                Total Expense for{" "}
+                <strong>
+                  {person === auth.currentUser?.uid
+                    ? "Self"
+                    : toTitleCase(person)}
+                </strong>
+                :{" "}
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "GBP", // Ensure correct currency formatting
+                }).format(totalExpense)}
+              </p>
+            </div>
+          )}
+
+          <div className="input">
+            <button type="submit">Add Expense</button>
           </div>
-        )}
+        </form>
 
-        <div className="input">
-          <button type="submit">Add Expense</button>
-        </div>
-      </form>
-
-      {error && <p className="error-message">{error}</p>}
-    </div>
+        {error && <p className="error-message">{error}</p>}
+      </div>
+    </>
   );
 }

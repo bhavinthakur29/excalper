@@ -1,27 +1,31 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./navbar.css";
 import Modal from "../modal/Modal";
 
 function Navbar({ user, handleLogout }) {
-  const navigate = useNavigate();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const confirmLogout = () => {
     setIsLogoutModalOpen(false);
-    handleLogout(); // Call the provided handleLogout function
+    handleLogout();
   };
 
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div className="logo" onClick={() => navigate("/")}>
-          Expense Calculator
-        </div>
+        <div className="logo">E X C A L P E R</div>
         <div className="navbar-links">
           <ul>
             {user ? (
               <>
+                <li className="home desktop-only">
+                  <Link to="/" aria-label="Go to home page">
+                    <i className="fa-solid fa-list-ul"></i>
+                    <span>Home</span>
+                  </Link>
+                  <div className="underline"></div>
+                </li>
                 <li className="home">
                   <Link to="/expenses" aria-label="Go to home page">
                     <i className="fa-solid fa-list-ul"></i>
@@ -44,9 +48,9 @@ function Navbar({ user, handleLogout }) {
                   <div className="underline"></div>
                 </li>
                 <li className="profile-page">
-                  <Link to="/profile" aria-label="Profile">
+                  <Link to="/settings" aria-label="Profile">
                     <i className="fa-solid fa-user"></i>
-                    <span>Profile</span>
+                    <span>Settings</span>
                   </Link>
                   <div className="underline"></div>
                 </li>

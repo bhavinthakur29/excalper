@@ -1,6 +1,12 @@
+.user-welcome {
+  margin-top: 50px;
+  font-size: 30px;
+}
+
 .homepage {
   width: 100%;
   padding: 100px;
+  padding-top: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,8 +28,12 @@
 }
 
 @media screen and (max-width: 600px) {
+  .user-welcome {
+    margin-top: 20px;
+  }
+
   .homepage {
-    padding: 5px;
+    padding: 0;
   }
   .homepage-content {
     flex-direction: column;

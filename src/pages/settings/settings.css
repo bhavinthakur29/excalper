@@ -1,0 +1,36 @@
+.settings {
+  max-width: 100%;
+  padding: 100px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.settings-content {
+  display: flex;
+  width: 70%;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.nav-card {
+  transition: 300ms ease;
+}
+
+.nav-card:hover {
+  transform: scale(1.05);
+}
+
+@media screen and (max-width: 600px) {
+  .settings {
+    padding: 5px;
+  }
+  .settings-content {
+    flex-direction: column;
+  }
+
+  .nav-card {
+    width: 100px;
+  }
+}

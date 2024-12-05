@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { auth, db } from "../../utils/firebase"; // Ensure db is imported
+import { auth, db } from "../../utils/firebase";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
-import { collection, addDoc } from "firebase/firestore"; // Import Firestore methods
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore"; // Import Firestore methods
 import { toast } from "react-toastify";
 import "./login.css";
 import { Link } from "react-router-dom";
@@ -19,8 +19,24 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast.success("Logged in successfully");
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Fetch the user's name from Firestore
+      const userRef = collection(db, "users");
+      const q = query(userRef, where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        toast.success(`Welcome, ${userData.name}`);
+      } else {
+        toast.success("Logged in successfully!");
+      }
     } catch (error) {
       if (error.code === "auth/invalid-credential") {
         toast.error("Invalid credentials!");
@@ -42,11 +58,11 @@ export default function Login() {
       const user = userCredential.user;
 
       // Save the user's name and email in Firestore
-      const userRef = collection(db, "users"); // Get users collection
+      const userRef = collection(db, "users");
       await addDoc(userRef, {
         email: user.email,
-        name: name, // Store the name in Firestore
-        uid: user.uid, // Store the user UID as well
+        name: name,
+        uid: user.uid,
       });
 
       toast.success("Account created successfully");

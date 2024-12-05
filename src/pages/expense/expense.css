@@ -1,11 +1,35 @@
 .expense-list {
+  & .sort {
+    width: 50%;
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #ccc;
+
+    & select {
+      cursor: pointer;
+      margin: 0 5px;
+      border: 1px solid;
+      outline: none;
+      background-color: transparent;
+      padding: 3px;
+    }
+  }
+
   & .main {
     width: 100%;
 
-    & h3 {
-      text-decoration: underline;
-      font-size: 16px;
+    & .month {
+      font-size: 22px;
       color: rgb(5, 0, 162);
+      margin-top: 30px;
+      border-bottom: solid;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+
+      & span:last-child {
+        font-size: 60%;
+      }
     }
   }
 
@@ -23,6 +47,7 @@
 
       & .description {
         border-right: 1px solid black;
+        overflow-wrap: break-word;
         width: 80%;
       }
 
@@ -97,18 +122,17 @@
   }
 
   & .total {
-    width: 100%;
+    width: 75%;
     display: flex;
     justify-content: space-between;
     font-weight: 900;
     font-size: 14px;
-    margin-top: 20px;
-    padding-top: 10px;
-    border-top: 1px solid rgb(162, 162, 162);
-
-    & p:last-child {
-      color: green;
-    }
+    padding: 10px;
+    position: fixed;
+    border-radius: 8px;
+    bottom: 50px;
+    background-color: green;
+    color: white;
   }
 }
 
@@ -237,6 +261,27 @@
 }
 
 @media screen and (max-width: 600px) {
+  & .sort {
+    width: 100% !important;
+    font-size: 120%;
+
+    & span:first-child {
+      font-size: 120%;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    & select {
+      font-size: 100%;
+      cursor: pointer;
+      margin: 0 10px;
+      border: 1px solid;
+      outline: none;
+      background-color: transparent;
+      padding: 3px;
+    }
+  }
+
   .expense-list {
     width: 85%;
 
@@ -274,5 +319,16 @@
   .expense-list .add-new-expense a {
     width: 100%;
     margin: 0 0 10px 0;
+  }
+
+  .expense-list .total {
+    bottom: 20px;
+    padding: 15px;
+    width: 85%;
+    background-color: green;
+
+    & p {
+      color: white !important;
+    }
   }
 }
