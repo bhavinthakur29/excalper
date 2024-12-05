@@ -85,7 +85,7 @@ export default function ExpenseForm({ userId }) {
         description,
         amount: parseFloat(amount),
         person,
-        paymentMode, // Consistently use 'paymentMode'
+        paymentMode,
         timestamp: serverTimestamp(),
       });
 
@@ -168,7 +168,7 @@ export default function ExpenseForm({ userId }) {
                     ? "Self"
                     : toTitleCase(person)}
                 </strong>
-                :{" "}
+                :
                 {new Intl.NumberFormat("en-US", {
                   style: "currency",
                   currency: "GBP",
