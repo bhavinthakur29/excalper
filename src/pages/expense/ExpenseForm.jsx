@@ -17,7 +17,7 @@ export default function ExpenseForm({ userId }) {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [person, setPerson] = useState("");
-  const [paymentMode, setPaymentMode] = useState(""); // New state for payment mode
+  const [paymentMode, setPaymentMode] = useState("");
   const [people, setPeople] = useState([]);
   const [error, setError] = useState(null);
   const [totalExpense, setTotalExpense] = useState(0);
@@ -37,7 +37,7 @@ export default function ExpenseForm({ userId }) {
         if (peopleList.length === 0) {
           setPerson(userId);
         }
-      } catch (error) {
+      } catch {
         setError("Error fetching people list.");
       }
     };
@@ -57,7 +57,7 @@ export default function ExpenseForm({ userId }) {
           0
         );
         setTotalExpense(total);
-      } catch (error) {
+      } catch {
         setError("Error fetching total expense.");
       }
     };
@@ -74,7 +74,7 @@ export default function ExpenseForm({ userId }) {
       isNaN(amount) ||
       amount <= 0 ||
       !person ||
-      !paymentMode // Ensure payment mode is selected
+      !paymentMode
     ) {
       toast.error("Please provide all required fields.");
       return;
@@ -85,15 +85,15 @@ export default function ExpenseForm({ userId }) {
         description,
         amount: parseFloat(amount),
         person,
-        paymentMode, // Store payment mode
+        paymentMode, // Consistently use 'paymentMode'
         timestamp: serverTimestamp(),
       });
+
       toast.success("Expense added successfully!");
       setDescription("");
       setAmount("");
-      setPerson("");
-      setPaymentMode(""); // Reset payment mode
-    } catch (error) {
+      setPaymentMode("");
+    } catch {
       toast.error("Failed to add expense. Please try again.");
     }
   };
@@ -124,7 +124,6 @@ export default function ExpenseForm({ userId }) {
               step="any"
             />
           </div>
-
           {people.length > 0 ? (
             <div className="input">
               <select
@@ -145,7 +144,6 @@ export default function ExpenseForm({ userId }) {
               <input type="text" value="Self" readOnly />
             </div>
           )}
-
           <div className="input">
             <select
               value={paymentMode}
@@ -161,7 +159,6 @@ export default function ExpenseForm({ userId }) {
               <option value="net banking">Net Banking</option>
             </select>
           </div>
-
           {person && (
             <div className="total-expense" style={{ marginBottom: "15px" }}>
               <p>
@@ -179,12 +176,10 @@ export default function ExpenseForm({ userId }) {
               </p>
             </div>
           )}
-
           <div className="input">
             <button type="submit">Add Expense</button>
           </div>
         </form>
-
         {error && <p className="error-message">{error}</p>}
       </div>
     </>

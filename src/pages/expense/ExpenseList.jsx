@@ -144,8 +144,8 @@ export default function ExpenseList({ userId }) {
       );
       await updateDoc(expenseRef, {
         description: updatedDescription,
-        amount: updatedAmount,
-        mode: updatedPaymentMode,
+        amount: parseFloat(updatedAmount),
+        paymentMode: updatedPaymentMode, // Consistently use 'paymentMode'
       });
 
       setEditingExpense(null);
@@ -263,7 +263,7 @@ export default function ExpenseList({ userId }) {
                     {expense.person === auth.currentUser?.uid
                       ? "Self"
                       : toTitleCase(expense.person)}{" "}
-                    | Through: {toTitleCase(expense.mode || "N/A")}
+                    | Through: {toTitleCase(expense.paymentMode || "N/A")}
                   </p>
 
                   <p className="date">
