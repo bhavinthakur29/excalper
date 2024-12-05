@@ -17,6 +17,7 @@ export default function ExpenseForm({ userId }) {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [person, setPerson] = useState("");
+  const [paymentMode, setPaymentMode] = useState(""); // New state for payment mode
   const [people, setPeople] = useState([]);
   const [error, setError] = useState(null);
   const [totalExpense, setTotalExpense] = useState(0);
@@ -27,17 +28,14 @@ export default function ExpenseForm({ userId }) {
       return;
     }
 
-    // Fetch people list from Firestore for the logged-in user
     const fetchPeople = async () => {
       try {
         const peopleRef = collection(db, "users", userId, "people");
         const peopleSnapshot = await getDocs(peopleRef);
         const peopleList = peopleSnapshot.docs.map((doc) => doc.data().name);
-        setPeople(peopleList.sort()); // Sort alphabetically
-
-        // If no people are added, default to the logged-in user's name
+        setPeople(peopleList.sort());
         if (peopleList.length === 0) {
-          setPerson(userId); // Assuming userId is the user's name or email
+          setPerson(userId);
         }
       } catch (error) {
         setError("Error fetching people list.");
@@ -47,16 +45,13 @@ export default function ExpenseForm({ userId }) {
     fetchPeople();
   }, [userId]);
 
-  // Fetch total expense for the selected person
   useEffect(() => {
     const fetchTotalExpense = async () => {
-      if (!person) return; // If no person is selected, skip fetching
-
+      if (!person) return;
       try {
         const expensesRef = collection(db, "users", userId, "expenses");
         const q = query(expensesRef, where("person", "==", person));
         const expensesSnapshot = await getDocs(q);
-
         const total = expensesSnapshot.docs.reduce(
           (sum, doc) => sum + doc.data().amount,
           0
@@ -73,23 +68,31 @@ export default function ExpenseForm({ userId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!description || !amount || isNaN(amount) || amount <= 0 || !person) {
+    if (
+      !description ||
+      !amount ||
+      isNaN(amount) ||
+      amount <= 0 ||
+      !person ||
+      !paymentMode // Ensure payment mode is selected
+    ) {
       toast.error("Please provide all required fields.");
       return;
     }
 
     try {
-      // Add expense to Firestore
       await addDoc(collection(db, "users", userId, "expenses"), {
         description,
         amount: parseFloat(amount),
         person,
+        paymentMode, // Store payment mode
         timestamp: serverTimestamp(),
       });
       toast.success("Expense added successfully!");
       setDescription("");
       setAmount("");
       setPerson("");
+      setPaymentMode(""); // Reset payment mode
     } catch (error) {
       toast.error("Failed to add expense. Please try again.");
     }
@@ -139,16 +142,29 @@ export default function ExpenseForm({ userId }) {
             </div>
           ) : (
             <div className="input">
-              {/* <input type="text" value={userId} readOnly /> */}
               <input type="text" value="Self" readOnly />
             </div>
           )}
 
-          {/* Display total expense for the selected person */}
+          <div className="input">
+            <select
+              value={paymentMode}
+              onChange={(e) => setPaymentMode(e.target.value)}
+              required
+            >
+              <option value="" disabled>
+                Select payment mode
+              </option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="upi">UPI</option>
+              <option value="net banking">Net Banking</option>
+            </select>
+          </div>
+
           {person && (
             <div className="total-expense" style={{ marginBottom: "15px" }}>
               <p>
-                {/* Total Expense for {person}:{" "} */}
                 Total Expense for{" "}
                 <strong>
                   {person === auth.currentUser?.uid
@@ -158,7 +174,7 @@ export default function ExpenseForm({ userId }) {
                 :{" "}
                 {new Intl.NumberFormat("en-US", {
                   style: "currency",
-                  currency: "GBP", // Ensure correct currency formatting
+                  currency: "GBP",
                 }).format(totalExpense)}
               </p>
             </div>

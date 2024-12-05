@@ -29,6 +29,7 @@ export default function ExpenseList({ userId }) {
   const [selectedMonth, setSelectedMonth] = useState(""); // Added for sorting by month
   const [selectedPerson, setSelectedPerson] = useState(""); // Added for sorting by person
   const [people, setPeople] = useState([]); // List of people
+  const [updatedPaymentMode, setUpdatedPaymentMode] = useState("");
 
   useEffect(() => {
     if (!userId) {
@@ -129,6 +130,7 @@ export default function ExpenseList({ userId }) {
     setEditingExpense(expense);
     setUpdatedDescription(expense.description);
     setUpdatedAmount(expense.amount);
+    setUpdatedPaymentMode(expense.mode || "");
   };
 
   const handleUpdateExpense = async () => {
@@ -143,11 +145,13 @@ export default function ExpenseList({ userId }) {
       await updateDoc(expenseRef, {
         description: updatedDescription,
         amount: updatedAmount,
+        mode: updatedPaymentMode,
       });
 
       setEditingExpense(null);
       setUpdatedDescription("");
       setUpdatedAmount("");
+      setUpdatedPaymentMode("");
     }
   };
 
@@ -155,6 +159,7 @@ export default function ExpenseList({ userId }) {
     setEditingExpense(null);
     setUpdatedDescription("");
     setUpdatedAmount("");
+    setUpdatedPaymentMode("");
   };
 
   const handleDeleteExpense = async () => {
@@ -237,7 +242,6 @@ export default function ExpenseList({ userId }) {
                     style: "currency",
                     currency: "GBP",
                   }).format(monthTotal)}
-                  
                 </span>
               </h3>
               {filteredGroupedExpenses[month].map((expense) => (
@@ -255,10 +259,11 @@ export default function ExpenseList({ userId }) {
                   </div>
 
                   <p className="person">
-                    For:{" "}
+                    By:{" "}
                     {expense.person === auth.currentUser?.uid
                       ? "Self"
-                      : toTitleCase(expense.person)}
+                      : toTitleCase(expense.person)}{" "}
+                    | Through: {toTitleCase(expense.mode || "N/A")}
                   </p>
 
                   <p className="date">
@@ -297,6 +302,19 @@ export default function ExpenseList({ userId }) {
               value={updatedAmount}
               onChange={(e) => setUpdatedAmount(Number(e.target.value))}
             />
+            <label>Payment Mode</label>
+            <select
+              value={updatedPaymentMode}
+              onChange={(e) => setUpdatedPaymentMode(e.target.value)}
+            >
+              <option value="" disabled>
+                Select payment mode
+              </option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="upi">UPI</option>
+              <option value="net banking">Net Banking</option>
+            </select>
             <div className="btn-group">
               <button className="update-btn" onClick={handleUpdateExpense}>
                 Update

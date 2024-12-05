@@ -83,7 +83,7 @@ export default function ManagePassword() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
-                />
+                 />
               </div>
               <div>
                 <input
