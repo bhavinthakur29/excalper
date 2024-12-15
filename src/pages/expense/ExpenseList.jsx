@@ -338,6 +338,7 @@ export default function ExpenseList({ userId }) {
             content="Are you sure you want to delete this expense?"
             onConfirm={handleDeleteExpense}
             onCancel={() => setConfirmDeleteVisible(false)}
+            cancelBtn={true}
           />
         )}
         <div className="total">

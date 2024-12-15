@@ -1,5 +1,10 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, updateProfile } from "firebase/auth";
+import {
+  getAuth,
+  updateProfile,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 
@@ -20,4 +25,4 @@ const auth = getAuth(app);
 const analytics = getAnalytics(app);
 
 // Export `updateProfile` for use in other files
-export { db, auth, analytics, updateProfile };
+export { db, RecaptchaVerifier, auth, analytics, updateProfile };
