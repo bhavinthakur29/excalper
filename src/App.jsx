@@ -4,15 +4,15 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import Navbar from './components/Navbar/Navbar.jsx';
-import Loading from './components/Loading/Loading.jsx';
-import Home from './pages/Home.jsx';
-import Login from './pages/Login.jsx';
-import ExpenseForm from './pages/ExpenseForm.jsx';
-import Expenses from './pages/Expenses.jsx';
-import Users from './pages/Users.jsx';
-import Contributions from './pages/Contributions.jsx';
-import Settings from './pages/Settings.jsx';
+import Navbar from './components/Navbar/Navbar';
+import Loading from './components/Loading/Loading';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import ExpenseForm from './pages/ExpenseForm';
+import Expenses from './pages/Expenses';
+import Users from './pages/Users';
+import Contributions from './pages/Contributions';
+import Settings from './pages/Settings';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
