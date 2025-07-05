@@ -116,6 +116,7 @@
     background: #f8f8f8;
     outline: none;
     margin-top: 0.2rem;
+    cursor: not-allowed;
 }
 
 .edit-expense-form input:focus,
@@ -139,10 +140,6 @@
 
 .edit-expense-form .btn-primary:active {
     background: #554ee0;
-}
-
-#person:hover {
-    cursor: not-allowed;
 }
 
 select:hover {

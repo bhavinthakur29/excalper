@@ -108,11 +108,11 @@
     font-size: 0.875rem;
 }
 
-/* Theme Toggle */
-.theme-toggle {
+/* Theme Toggle Switch */
+.theme-toggle-switch {
     position: relative;
     width: 50px;
-    height: 24px;
+    height: 25px;
     background: var(--color-border);
     border-radius: 12px;
     border: none;
@@ -121,7 +121,7 @@
     padding: 0;
 }
 
-.theme-toggle.active {
+.theme-toggle-switch.active {
     background: var(--color-primary);
 }
 
@@ -137,7 +137,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.theme-toggle.active .toggle-slider {
+.theme-toggle-switch.active .toggle-slider {
     transform: translateX(26px);
 }
 

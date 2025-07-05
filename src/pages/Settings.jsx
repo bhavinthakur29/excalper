@@ -279,7 +279,7 @@ export default function Settings() {
                     </div>
                     <button
                         onClick={toggleTheme}
-                        className={`theme-toggle ${theme === 'dark' ? 'active' : ''}`}
+                        className={`theme-toggle-switch ${theme === 'dark' ? 'active' : ''}`}
                     >
                         <span className="toggle-slider"></span>
                     </button>
