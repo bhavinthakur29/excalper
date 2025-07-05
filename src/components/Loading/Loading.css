@@ -1,0 +1,30 @@
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 40vh;
+    color: var(--color-text);
+}
+
+.spinner {
+    font-size: 2.5rem;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-spinner p {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 0;
+}

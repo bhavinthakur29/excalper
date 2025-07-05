@@ -1,0 +1,318 @@
+.users-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.users-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.users-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.users-header p {
+    font-size: 1.125rem;
+    color: var(--color-secondary);
+    margin: 0;
+}
+
+.add-user-section {
+    background: var(--color-bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+}
+
+.add-user-section h2 {
+    margin: 0 0 1.5rem 0;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.add-user-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.add-user-form input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--color-bg-card);
+    color: var(--color-text);
+}
+
+.add-user-form input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.month-filter-section {
+    background: var(--color-bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+}
+
+.month-filter-section h2 {
+    margin: 0 0 1rem 0;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.month-select {
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--color-bg-card);
+    color: var(--color-text);
+    min-width: 200px;
+}
+
+.month-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.users-list-section {
+    background: var(--color-bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+}
+
+.users-list-section h2 {
+    margin: 0 0 1.5rem 0;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.no-users {
+    text-align: center;
+    padding: 3rem;
+    color: var(--color-secondary);
+}
+
+.no-users svg {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.user-card {
+    background: var(--color-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-icon {
+    font-size: 2rem;
+    color: var(--color-primary);
+}
+
+.user-info h3 {
+    margin: 0 0 0.25rem 0;
+    color: var(--color-text);
+    font-size: 1.125rem;
+}
+
+.user-info p {
+    margin: 0;
+    color: var(--color-secondary);
+    font-size: 0.875rem;
+}
+
+.delete-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.distribution-section {
+    background: var(--color-bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+}
+
+.distribution-section h2 {
+    margin: 0 0 1.5rem 0;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.distribution-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: var(--color-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px solid var(--color-border);
+}
+
+.summary-card h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--color-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.summary-card p {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.distribution-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.distribution-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--color-bg);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.user-total {
+    color: var(--color-secondary);
+    font-weight: 500;
+}
+
+.user-status {
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.user-status.receives {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.user-status.pays {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.user-status.balanced {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+[data-theme='dark'] .user-status.receives {
+    background: #166534;
+    color: #dcfce7;
+}
+
+[data-theme='dark'] .user-status.pays {
+    background: #dc2626;
+    color: #fef2f2;
+}
+
+[data-theme='dark'] .user-status.balanced {
+    background: #374151;
+    color: #f3f4f6;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 3rem;
+    color: var(--color-secondary);
+}
+
+@media (max-width: 768px) {
+    .users-container {
+        padding: 1rem;
+    }
+
+    .users-header h1 {
+        font-size: 2rem;
+    }
+
+    .add-user-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .users-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .distribution-item {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+}

@@ -1,34 +1,22 @@
-import React from "react";
-import "./modal.css";
+import React from 'react';
+import './Modal.css';
 
-const Modal = ({
-  title,
-  message,
-  onConfirm,
-  onCancel,
-  cancelBtn,
-  confirmText,
-}) => {
-  const cancelVis = true;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-container">
-        <h3 className="modal-title">{title}</h3>
-        <div className="modal-message">{message}</div>
-        <div className="modal-buttons">
-          <button className="modal-btn confirm-btn" onClick={onConfirm}>
-            {confirmText || "Confirm"}
-          </button>
-          {cancelVis == cancelBtn && (
-            <button className="modal-btn cancel-btn" onClick={onCancel}>
-              Cancel
-            </button>
-          )}
+export default function Modal({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', showCancel = true, customContent }) {
+    if (!isOpen) return null;
+    return (
+        <div className="modal-overlay" onClick={onCancel}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>{title}</h3>
+                </div>
+                <div className="modal-body">
+                    {customContent ? customContent : <p>{message}</p>}
+                </div>
+                <div className="modal-footer">
+                    {showCancel && <button className="btn btn-secondary" onClick={onCancel}>{cancelText}</button>}
+                    <button className="btn btn-primary" onClick={onConfirm}>{confirmText}</button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
-};
-
-export default Modal;
+    );
+} 

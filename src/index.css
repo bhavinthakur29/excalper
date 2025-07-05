@@ -1,68 +1,398 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-secondary: #6b7280;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-text: #1f2937;
+  --color-text-light: #4b5563;
+  --color-bg: #ffffff;
+  --color-bg-card: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --transition: all 0.2s ease-in-out;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+[data-theme='dark'] {
+  --color-text: #f9fafb;
+  --color-text-light: #d1d5db;
+  --color-bg: #111827;
+  --color-bg-card: #1f2937;
+  --color-border: #374151;
+  --color-shadow: rgba(0, 0, 0, 0.3);
 }
-a:hover {
-  color: #535bf2;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Mobile-first responsive design */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+/* Enhanced button styles for mobile */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
   font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+  text-decoration: none;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: var(--transition);
+  min-height: 44px;
+  /* Better touch target for mobile */
+  min-width: 44px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-color-scheme: light) {
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+/* Enhanced form styles for mobile */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  transition: var(--transition);
+  min-height: 44px;
+  /* Better touch target */
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Mobile-optimized card styles */
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Enhanced mobile navigation */
+.nav-mobile {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--color-border);
+  padding: 0.75rem 1rem;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.nav-mobile-list {
+  display: flex;
+  justify-content: space-around;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-mobile-item {
+  flex: 1;
+  text-align: center;
+}
+
+.nav-mobile-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  color: var(--color-secondary);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: var(--transition);
+  border-radius: var(--border-radius);
+  min-height: 60px;
+  justify-content: center;
+}
+
+.nav-mobile-link:hover,
+.nav-mobile-link.active {
+  color: var(--color-primary);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.nav-mobile-icon {
+  font-size: 1.25rem;
+}
+
+/* Mobile-optimized grid layouts */
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid-1 {
+  grid-template-columns: 1fr;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Responsive breakpoints */
+@media (min-width: 640px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+
+  .grid-sm-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-sm-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .grid-sm-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 2rem;
+  }
+
+  .grid-md-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-md-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .grid-md-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .nav-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 2.5rem;
+  }
+
+  .grid-lg-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-lg-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .grid-lg-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    padding: 0 3rem;
+  }
+}
+
+/* Main content spacing */
+.main-content {
+  padding-top: 64px;
+  /* Height of navbar */
+  min-height: calc(100vh - 64px);
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 767px) {
+  html {
+    font-size: 14px;
+    /* Slightly smaller base font for mobile */
+  }
+
+  .main-content {
+    padding-top: 56px;
+    /* Smaller navbar height on mobile */
+    min-height: calc(100vh - 56px);
+  }
+
+  .btn {
+    padding: 1rem 1.5rem;
+    /* Larger touch targets */
+    font-size: 1rem;
+  }
+
+  input,
+  select,
+  textarea {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Hide desktop navigation on mobile */
+  .nav-desktop {
+    display: none;
+  }
+
+  /* Add bottom padding for mobile nav */
+  .main-content {
+    padding-bottom: 5rem;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover {
+    transform: none;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    --color-border: #000000;
+    --color-text: #000000;
+    --color-bg: #ffffff;
   }
-  a:hover {
-    color: #747bff;
+
+  [data-theme='dark'] {
+    --color-border: #ffffff;
+    --color-text: #ffffff;
+    --color-bg: #000000;
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+/* Print styles */
+@media print {
+
+  .nav-mobile,
+  .nav-desktop,
+  .btn {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #000;
   }
 }

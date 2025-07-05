@@ -1,0 +1,197 @@
+.expense-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.expense-form-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-secondary);
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.875rem;
+    min-height: 44px;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    background-color: var(--color-bg);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.expense-form-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    flex: 1;
+}
+
+.expense-form-card {
+    background: var(--color-bg-card);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
+}
+
+.expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: var(--color-text);
+    font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group select {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    background: var(--color-bg-card);
+    color: var(--color-text);
+    min-height: 44px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.total-expense-info {
+    background: var(--color-bg);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin: 1rem 0;
+    border: 1px solid var(--color-border);
+    text-align: center;
+}
+
+.total-expense-info p {
+    margin: 0;
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.input-disabled {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    color: var(--color-secondary);
+    min-height: 44px;
+}
+
+.submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    min-height: 56px;
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (min-width: 640px) {
+    .expense-form-container {
+        padding: 1.5rem;
+    }
+
+    .expense-form-card {
+        padding: 2rem;
+    }
+
+    .expense-form-header h1 {
+        font-size: 1.875rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .expense-form-container {
+        padding: 2rem;
+    }
+
+    .expense-form-card {
+        padding: 2.5rem;
+    }
+
+    .expense-form-header {
+        margin-bottom: 2rem;
+    }
+
+    .expense-form-header h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .expense-form-container {
+        padding: 2.5rem;
+    }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+
+    .back-btn:hover,
+    .submit-btn:hover {
+        transform: none;
+    }
+
+    .back-btn:active,
+    .submit-btn:active {
+        transform: scale(0.98);
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .expense-form-card {
+        border-width: 2px;
+    }
+
+    .form-group input,
+    .form-group select {
+        border-width: 2px;
+    }
+}
