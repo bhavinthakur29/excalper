@@ -13,6 +13,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleEmailLogin = async (e) => {
@@ -30,7 +31,7 @@ export default function Login() {
     };
 
     const handleGoogleLogin = async () => {
-        setLoading(true);
+        setGoogleLoading(true);
         try {
             await loginWithGoogle();
             toast.success('Logged in with Google!');
@@ -38,19 +39,19 @@ export default function Login() {
         } catch (error) {
             toast.error('Google login failed.');
         } finally {
-            setLoading(false);
+            setGoogleLoading(false);
         }
     };
 
     return (
         <div className="login-container">
-            <div className="login-card">
-                <h1>Sign In</h1>
-                <form onSubmit={handleEmailLogin} className="login-form">
+            <div className="login-card glass-card" role="main" aria-label="Sign in form">
+                <h1 tabIndex={0}>Sign In</h1>
+                <form onSubmit={handleEmailLogin} className="login-form" autoComplete="on" aria-label="Sign in with email and password">
                     <div className="form-group">
                         <label htmlFor="email">Email</label>
                         <div className="input-wrapper">
-                            <FaEnvelope className="input-icon" />
+                            <FaEnvelope className="input-icon" aria-hidden="true" />
                             <input
                                 type="email"
                                 id="email"
@@ -58,13 +59,16 @@ export default function Login() {
                                 onChange={e => setEmail(e.target.value)}
                                 placeholder="Enter your email"
                                 required
+                                autoComplete="email"
+                                aria-label="Email address"
+                                disabled={loading || googleLoading}
                             />
                         </div>
                     </div>
                     <div className="form-group">
                         <label htmlFor="password">Password</label>
                         <div className="input-wrapper">
-                            <FaLock className="input-icon" />
+                            <FaLock className="input-icon" aria-hidden="true" />
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 id="password"
@@ -72,19 +76,24 @@ export default function Login() {
                                 onChange={e => setPassword(e.target.value)}
                                 placeholder="Enter your password"
                                 required
+                                autoComplete="current-password"
+                                aria-label="Password"
+                                disabled={loading || googleLoading}
                             />
-                            <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                            <button type="button" className="password-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)} tabIndex={0} disabled={loading || googleLoading}>
                                 {showPassword ? <FaEyeSlash /> : <FaEye />}
                             </button>
                         </div>
                     </div>
-                    <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
+                    <button type="submit" className="btn btn-primary login-btn" disabled={loading || googleLoading} aria-busy={loading} aria-label="Sign in">
+                        {loading ? <span className="login-spinner"></span> : null}
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
-                <div className="divider"><span>or</span></div>
-                <button onClick={handleGoogleLogin} className="btn btn-google" disabled={loading}>
-                    <FaGoogle /> Continue with Google
+                <div className="divider" aria-hidden="true"></div>
+                <button onClick={handleGoogleLogin} className="btn btn-google" disabled={loading || googleLoading} aria-busy={googleLoading} aria-label="Continue with Google">
+                    {googleLoading ? <span className="login-spinner"></span> : <FaGoogle />}
+                    {googleLoading ? 'Signing in...' : 'Continue with Google'}
                 </button>
             </div>
         </div>
