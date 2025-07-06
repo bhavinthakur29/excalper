@@ -17,6 +17,14 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --transition: all 0.2s ease-in-out;
+
+  /* Navbar specific variables */
+  --bg-primary: var(--color-bg);
+  --bg-secondary: var(--color-bg-card);
+  --bg-accent: rgba(59, 130, 246, 0.1);
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-light);
+  --border-color: var(--color-border);
 }
 
 [data-theme='dark'] {
@@ -26,6 +34,14 @@
   --color-bg-card: #1f2937;
   --color-border: #374151;
   --color-shadow: rgba(0, 0, 0, 0.3);
+
+  /* Navbar specific variables for dark theme */
+  --bg-primary: var(--color-bg);
+  --bg-secondary: var(--color-bg-card);
+  --bg-accent: rgba(59, 130, 246, 0.15);
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-light);
+  --border-color: var(--color-border);
 }
 
 * {
