@@ -9,6 +9,7 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
@@ -20,6 +21,7 @@
     width: 90%;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     animation: modalSlideIn 0.3s ease-out;
+    border: 1px solid var(--color-border);
 }
 
 @keyframes modalSlideIn {
@@ -90,6 +92,22 @@
     border: none;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn:disabled:hover {
+    transform: none !important;
+    background-color: inherit !important;
 }
 
 .btn-primary {
@@ -97,8 +115,10 @@
     color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-secondary {
@@ -106,6 +126,71 @@
     color: #374151;
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
     background-color: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+/* Modal Spinner */
+.modal-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Enhanced Modal Styling */
+.modal-content {
+    background: var(--color-bg-card);
+    color: var(--color-text);
+    border-radius: 12px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--color-border);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.modal-body p {
+    margin: 0;
+    color: var(--color-text);
+    line-height: 1.6;
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 95%;
+        margin: 1rem;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
 }

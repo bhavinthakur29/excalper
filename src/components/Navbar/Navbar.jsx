@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { FaHome, FaMoneyBillWave, FaUsers, FaChartPie, FaCog, FaBars, FaTimes, FaSun, FaMoon, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaHome, FaMoneyBillWave, FaUsers, FaChartPie, FaCog, FaBars, FaTimes, FaSun, FaMoon, FaSignOutAlt, FaUser, FaHistory } from 'react-icons/fa';
 import './Navbar.css';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
@@ -84,6 +84,7 @@ export default function Navbar() {
         { path: '/expenses', icon: FaMoneyBillWave, label: 'Expenses', description: 'Manage expenses' },
         { path: '/users', icon: FaUsers, label: 'Users', description: 'User management' },
         { path: '/contributions', icon: FaChartPie, label: 'Contributions', description: 'View contributions' },
+        { path: '/settlement-history', icon: FaHistory, label: 'Settlements', description: 'Settlement history' },
         { path: '/settings', icon: FaCog, label: 'Settings', description: 'App settings' }
     ];
 

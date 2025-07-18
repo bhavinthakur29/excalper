@@ -12,6 +12,7 @@ import ExpenseForm from './pages/ExpenseForm';
 import Expenses from './pages/Expenses';
 import Users from './pages/Users';
 import Contributions from './pages/Contributions';
+import SettlementHistory from './pages/SettlementHistory';
 import Settings from './pages/Settings';
 
 function PrivateRoute({ children }) {
@@ -41,6 +42,7 @@ export default function App() {
                 <Route path="/expense-form" element={<PrivateRoute><ExpenseForm /></PrivateRoute>} />
                 <Route path="/users" element={<PrivateRoute><Users /></PrivateRoute>} />
                 <Route path="/contributions" element={<PrivateRoute><Contributions /></PrivateRoute>} />
+                <Route path="/settlement-history" element={<PrivateRoute><SettlementHistory /></PrivateRoute>} />
                 <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>

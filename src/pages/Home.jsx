@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { FaPlus, FaChartBar, FaUsers, FaCog, FaMoneyBillWave, FaCalendarAlt, FaUser } from 'react-icons/fa';
+import { FaMoneyBillWave, FaUsers, FaCalendarAlt, FaChartBar, FaPlus, FaCog, FaUser, FaHistory, FaCheckCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { doc, getDoc } from 'firebase/firestore';
 import './Home.css';
 
 export default function Home() {
@@ -12,34 +13,37 @@ export default function Home() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [recentExpenses, setRecentExpenses] = useState([]);
+    const [recentSettlements, setRecentSettlements] = useState([]);
+    const [photoBase64, setPhotoBase64] = useState('');
     const [stats, setStats] = useState({
         totalExpenses: 0,
         totalUsers: 0,
         thisMonth: 0,
-        averageExpense: 0
+        averageExpense: 0,
+        totalSettlements: 0,
+        totalSettledAmount: 0
     });
-    const [photoBase64, setPhotoBase64] = useState('');
 
     useEffect(() => {
         if (user) {
             fetchDashboardData();
+            fetchPhoto();
         }
     }, [user]);
 
-    useEffect(() => {
-        const fetchPhoto = async () => {
-            if (user) {
-                try {
-                    const userRef = doc(db, 'users', user.uid);
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists() && userSnap.data().photoBase64) {
-                        setPhotoBase64(userSnap.data().photoBase64);
-                    }
-                } catch { }
+    const fetchPhoto = async () => {
+        if (user) {
+            try {
+                const userRef = doc(db, 'users', user.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists() && userSnap.data().photoBase64) {
+                    setPhotoBase64(userSnap.data().photoBase64);
+                }
+            } catch (error) {
+                console.error('Error fetching user photo:', error);
             }
-        };
-        fetchPhoto();
-    }, [user]);
+        }
+    };
 
     const fetchDashboardData = async () => {
         try {
@@ -54,9 +58,27 @@ export default function Home() {
             }));
             setRecentExpenses(expensesList);
 
+            // Fetch recent settlements
+            const settlementsRef = collection(db, 'users', user.uid, 'settlements');
+            const settlementsQuery = query(settlementsRef, orderBy('timestamp', 'desc'), limit(3));
+            const settlementsSnapshot = await getDocs(settlementsQuery);
+            const settlementsList = settlementsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                date: doc.data().timestamp?.toDate() || new Date()
+            }));
+            setRecentSettlements(settlementsList);
+
             // Fetch all expenses for stats
             const allExpensesSnapshot = await getDocs(expensesRef);
             const allExpenses = allExpensesSnapshot.docs.map(doc => ({
+                ...doc.data(),
+                date: doc.data().timestamp?.toDate() || new Date()
+            }));
+
+            // Fetch all settlements for stats
+            const allSettlementsSnapshot = await getDocs(settlementsRef);
+            const allSettlements = allSettlementsSnapshot.docs.map(doc => ({
                 ...doc.data(),
                 date: doc.data().timestamp?.toDate() || new Date()
             }));
@@ -69,6 +91,8 @@ export default function Home() {
             // Calculate stats
             const totalExpenses = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
             const averageExpense = allExpenses.length > 0 ? totalExpenses / allExpenses.length : 0;
+            const totalSettlements = allSettlements.length;
+            const totalSettledAmount = allSettlements.reduce((sum, s) => sum + s.amount, 0);
 
             const now = new Date();
             const thisMonth = allExpenses.filter(exp => {
@@ -81,7 +105,9 @@ export default function Home() {
                 totalExpenses,
                 totalUsers: usersCount,
                 thisMonth,
-                averageExpense
+                averageExpense,
+                totalSettlements,
+                totalSettledAmount
             });
         } catch (error) {
             toast.error('Failed to load dashboard data');
@@ -175,6 +201,24 @@ export default function Home() {
                         <p>£{stats.averageExpense.toFixed(2)}</p>
                     </div>
                 </div>
+                <div className="stat-card">
+                    <div className="stat-icon">
+                        <FaHistory />
+                    </div>
+                    <div className="stat-content">
+                        <h3>Total Settlements</h3>
+                        <p>{stats.totalSettlements}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-icon">
+                        <FaCheckCircle />
+                    </div>
+                    <div className="stat-content">
+                        <h3>Settled Amount</h3>
+                        <p>£{stats.totalSettledAmount.toFixed(2)}</p>
+                    </div>
+                </div>
             </div>
 
             {/* Quick Actions */}
@@ -189,6 +233,14 @@ export default function Home() {
                         <FaMoneyBillWave />
                         <span>View Expenses</span>
                     </button>
+                    <button onClick={() => navigate('/contributions')} className="action-card">
+                        <FaChartBar />
+                        <span>Contributions</span>
+                    </button>
+                    <button onClick={() => navigate('/settlement-history')} className="action-card">
+                        <FaHistory />
+                        <span>Settlements</span>
+                    </button>
                     <button onClick={() => navigate('/users')} className="action-card">
                         <FaUsers />
                         <span>Manage Users</span>
@@ -200,48 +252,98 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Recent Expenses */}
-            <div className="recent-expenses">
-                <div className="section-header">
-                    <h2>Recent Expenses</h2>
-                    <button onClick={() => navigate('/expenses')} className="view-all-btn">
-                        View All
-                    </button>
-                </div>
+            {/* Recent Activity */}
+            <div className="recent-activity">
+                <div className="activity-grid">
+                    {/* Recent Expenses */}
+                    <div className="recent-expenses">
+                        <div className="section-header">
+                            <h2>Recent Expenses</h2>
+                            <button onClick={() => navigate('/expenses')} className="view-all-btn">
+                                View All
+                            </button>
+                        </div>
 
-                {recentExpenses.length === 0 ? (
-                    <div className="no-expenses">
-                        <FaMoneyBillWave />
-                        <p>No expenses yet. Add your first expense to get started!</p>
-                        <button onClick={() => navigate('/expense-form')} className="btn btn-primary">
-                            <FaPlus /> Add First Expense
-                        </button>
-                    </div>
-                ) : (
-                    <div className="expenses-list">
-                        {recentExpenses.map(expense => (
-                            <div key={expense.id} className="expense-item">
-                                <div className="expense-info">
-                                    <h3>{expense.description}</h3>
-                                    <div className="expense-details">
-                                        <span className="expense-person">
-                                            <FaUser /> {expense.person}
-                                        </span>
-                                        <span className="expense-date">
-                                            {formatDate(expense.date)}
-                                        </span>
-                                        <span className="expense-payment">
-                                            {getPaymentModeIcon(expense.paymentMode)} {expense.paymentMode}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="expense-amount">
-                                    £{expense.amount.toFixed(2)}
-                                </div>
+                        {recentExpenses.length === 0 ? (
+                            <div className="no-expenses">
+                                <FaMoneyBillWave />
+                                <p>No expenses yet. Add your first expense to get started!</p>
+                                <button onClick={() => navigate('/expense-form')} className="btn btn-primary">
+                                    <FaPlus /> Add First Expense
+                                </button>
                             </div>
-                        ))}
+                        ) : (
+                            <div className="expenses-list">
+                                {recentExpenses.map(expense => (
+                                    <div key={expense.id} className="expense-item">
+                                        <div className="expense-info">
+                                            <h3>{expense.description}</h3>
+                                            <div className="expense-details">
+                                                <span className="expense-person">
+                                                    <FaUser /> {expense.person}
+                                                </span>
+                                                <span className="expense-date">
+                                                    {formatDate(expense.date)}
+                                                </span>
+                                                <span className="expense-payment">
+                                                    {getPaymentModeIcon(expense.paymentMode)} {expense.paymentMode}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="expense-amount">
+                                            £{expense.amount.toFixed(2)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
+
+                    {/* Recent Settlements */}
+                    <div className="recent-settlements">
+                        <div className="section-header">
+                            <h2>Recent Settlements</h2>
+                            <button onClick={() => navigate('/settlement-history')} className="view-all-btn">
+                                View All
+                            </button>
+                        </div>
+
+                        {recentSettlements.length === 0 ? (
+                            <div className="no-settlements">
+                                <FaHistory />
+                                <p>No settlements recorded yet.</p>
+                                <button onClick={() => navigate('/contributions')} className="btn btn-primary">
+                                    <FaCheckCircle /> Go to Contributions
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="settlements-list">
+                                {recentSettlements.map(settlement => (
+                                    <div key={settlement.id} className="settlement-item">
+                                        <div className="settlement-info">
+                                            <div className="settlement-users">
+                                                <span className="from-user">{settlement.fromUser}</span>
+                                                <span className="arrow">→</span>
+                                                <span className="to-user">{settlement.toUser}</span>
+                                            </div>
+                                            <div className="settlement-details">
+                                                <span className="settlement-description">
+                                                    {settlement.description}
+                                                </span>
+                                                <span className="settlement-date">
+                                                    {formatDate(settlement.date)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="settlement-amount">
+                                            £{settlement.amount.toFixed(2)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

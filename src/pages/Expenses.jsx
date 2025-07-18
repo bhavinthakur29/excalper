@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { FaPlus, FaTrash, FaEdit, FaCalendarAlt, FaFilter, FaChartBar, FaMoneyBillWave } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaEdit, FaCalendarAlt, FaFilter, FaChartBar, FaMoneyBillWave, FaCheckCircle, FaHistory } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
 import EditExpenseModal from '../components/Modal/EditExpenseModal';
@@ -13,31 +13,39 @@ export default function Expenses() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [expenses, setExpenses] = useState([]);
+    const [settlements, setSettlements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState('');
     const [selectedPerson, setSelectedPerson] = useState('');
+    const [selectedSettlementStatus, setSelectedSettlementStatus] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState(null);
+    const [showSettlementModal, setShowSettlementModal] = useState(false);
+    const [expenseToSettle, setExpenseToSettle] = useState(null);
     const [monthlyExpenses, setMonthlyExpenses] = useState({});
     const [people, setPeople] = useState([]);
     const [stats, setStats] = useState({
         total: 0,
         average: 0,
-        count: 0
+        count: 0,
+        settled: 0,
+        unsettled: 0
     });
     const [showEditModal, setShowEditModal] = useState(false);
     const [expenseToEdit, setExpenseToEdit] = useState(null);
+    const [settlingExpense, setSettlingExpense] = useState(null);
 
     useEffect(() => {
         if (user) {
             fetchExpenses();
+            fetchSettlements();
             fetchPeople();
         }
     }, [user]);
 
     useEffect(() => {
         calculateStats();
-    }, [expenses, selectedMonth, selectedPerson]);
+    }, [expenses, settlements, selectedMonth, selectedPerson, selectedSettlementStatus]);
 
     const fetchExpenses = async () => {
         try {
@@ -47,7 +55,7 @@ export default function Expenses() {
             const expensesList = expensesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                userId: user.uid, // ✅ Fix: Add userId to each expense
+                userId: user.uid,
                 date: doc.data().timestamp?.toDate() || new Date()
             }));
             setExpenses(expensesList);
@@ -67,6 +75,22 @@ export default function Expenses() {
         }
     };
 
+    const fetchSettlements = async () => {
+        try {
+            const settlementsRef = collection(db, 'users', user.uid, 'settlements');
+            const settlementsQuery = query(settlementsRef, orderBy('timestamp', 'desc'));
+            const settlementsSnapshot = await getDocs(settlementsQuery);
+            const settlementsList = settlementsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                date: doc.data().timestamp?.toDate() || new Date()
+            }));
+            setSettlements(settlementsList);
+        } catch (error) {
+            console.error('Error fetching settlements:', error);
+        }
+    };
+
     const fetchPeople = async () => {
         try {
             const peopleRef = collection(db, 'users', user.uid, 'people');
@@ -76,6 +100,19 @@ export default function Expenses() {
         } catch (error) {
             console.error('Error fetching people:', error);
         }
+    };
+
+    const isExpenseSettled = (expense) => {
+        // Check if there's a settlement for this specific expense
+        return settlements.some(settlement =>
+            settlement.expenseId === expense.id && settlement.status === 'completed'
+        );
+    };
+
+    const getExpenseSettlement = (expense) => {
+        return settlements.find(settlement =>
+            settlement.expenseId === expense.id && settlement.status === 'completed'
+        );
     };
 
     const calculateStats = () => {
@@ -92,11 +129,20 @@ export default function Expenses() {
             filteredExpenses = filteredExpenses.filter(exp => exp.person === selectedPerson);
         }
 
+        if (selectedSettlementStatus) {
+            filteredExpenses = filteredExpenses.filter(exp => {
+                const isSettled = isExpenseSettled(exp);
+                return selectedSettlementStatus === 'settled' ? isSettled : !isSettled;
+            });
+        }
+
         const total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
         const count = filteredExpenses.length;
         const average = count > 0 ? total / count : 0;
+        const settled = filteredExpenses.filter(exp => isExpenseSettled(exp)).length;
+        const unsettled = count - settled;
 
-        setStats({ total, average, count });
+        setStats({ total, average, count, settled, unsettled });
     };
 
     const deleteExpense = async () => {
@@ -113,6 +159,33 @@ export default function Expenses() {
         }
     };
 
+    const handleExpenseSettlement = async (settlementData) => {
+        if (!expenseToSettle) return;
+
+        setSettlingExpense(expenseToSettle.id);
+
+        try {
+            await addDoc(collection(db, 'users', user.uid, 'settlements'), {
+                ...settlementData,
+                expenseId: expenseToSettle.id,
+                timestamp: serverTimestamp(),
+                status: 'completed'
+            });
+
+            // Add a small delay for better UX
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            toast.success('Expense settlement recorded successfully!');
+            setShowSettlementModal(false);
+            setExpenseToSettle(null);
+            fetchSettlements();
+        } catch (error) {
+            toast.error('Failed to record expense settlement');
+        } finally {
+            setSettlingExpense(null);
+        }
+    };
+
     const getFilteredExpenses = () => {
         let filtered = expenses;
 
@@ -125,6 +198,13 @@ export default function Expenses() {
 
         if (selectedPerson) {
             filtered = filtered.filter(exp => exp.person === selectedPerson);
+        }
+
+        if (selectedSettlementStatus) {
+            filtered = filtered.filter(exp => {
+                const isSettled = isExpenseSettled(exp);
+                return selectedSettlementStatus === 'settled' ? isSettled : !isSettled;
+            });
         }
 
         return filtered;
@@ -191,6 +271,14 @@ export default function Expenses() {
                     <h3>Count</h3>
                     <p>{stats.count}</p>
                 </div>
+                <div className="stat-card">
+                    <h3>Settled</h3>
+                    <p>{stats.settled}</p>
+                </div>
+                <div className="stat-card">
+                    <h3>Unsettled</h3>
+                    <p>{stats.unsettled}</p>
+                </div>
             </div>
 
             {/* Filters */}
@@ -223,6 +311,18 @@ export default function Expenses() {
                             ))}
                         </select>
                     </div>
+                    <div className="filter-group">
+                        <label>Settlement Status</label>
+                        <select
+                            value={selectedSettlementStatus}
+                            onChange={(e) => setSelectedSettlementStatus(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="">All Expenses</option>
+                            <option value="settled">Settled</option>
+                            <option value="unsettled">Unsettled</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -237,49 +337,89 @@ export default function Expenses() {
                     </div>
                 ) : (
                     <div className="expenses-list">
-                        {getFilteredExpenses().map(expense => (
-                            <div key={expense.id} className="expense-card">
-                                <div className="expense-info">
-                                    <div className="expense-header">
-                                        <h3>{expense.description}</h3>
-                                        <span className="expense-amount">£{expense.amount.toFixed(2)}</span>
+                        {getFilteredExpenses().map(expense => {
+                            const isSettled = isExpenseSettled(expense);
+                            const settlement = getExpenseSettlement(expense);
+                            const isSettling = settlingExpense === expense.id;
+
+                            return (
+                                <div
+                                    key={expense.id}
+                                    className={`expense-card ${isSettled ? 'expense-settled' : ''} ${isSettling ? 'loading' : ''}`}
+                                >
+                                    <div className="expense-info">
+                                        <div className="expense-header">
+                                            <h3>{expense.description}</h3>
+                                            <div className="expense-amount-section">
+                                                <span className="expense-amount">£{expense.amount.toFixed(2)}</span>
+                                                {isSettled && (
+                                                    <span className="settlement-badge">
+                                                        <FaCheckCircle /> Settled
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="expense-details">
+                                            <span className="expense-person">
+                                                <FaCalendarAlt /> {expense.person}
+                                            </span>
+                                            <span className="expense-date">
+                                                {formatDate(expense.date)}
+                                            </span>
+                                            <span className="expense-payment">
+                                                {getPaymentModeIcon(expense.paymentMode)} {expense.paymentMode}
+                                            </span>
+                                            {isSettled && settlement && (
+                                                <span className="settlement-info">
+                                                    <FaHistory /> Settled by {settlement.fromUser} on {formatDate(settlement.date)}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="expense-details">
-                                        <span className="expense-person">
-                                            <FaCalendarAlt /> {expense.person}
-                                        </span>
-                                        <span className="expense-date">
-                                            {formatDate(expense.date)}
-                                        </span>
-                                        <span className="expense-payment">
-                                            {getPaymentModeIcon(expense.paymentMode)} {expense.paymentMode}
-                                        </span>
+                                    <div className="expense-actions">
+                                        {!isSettled && (
+                                            <button
+                                                onClick={() => {
+                                                    setExpenseToSettle(expense);
+                                                    setShowSettlementModal(true);
+                                                }}
+                                                className="btn btn-primary settle-btn"
+                                                title="Mark as settled"
+                                                disabled={isSettling}
+                                            >
+                                                {isSettling ? (
+                                                    <div className="settle-spinner"></div>
+                                                ) : (
+                                                    <FaCheckCircle />
+                                                )}
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => {
+                                                setExpenseToEdit(expense);
+                                                setShowEditModal(true);
+                                            }}
+                                            className="btn btn-secondary edit-btn"
+                                            title="Edit expense"
+                                            disabled={isSettling}
+                                        >
+                                            <FaEdit />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setExpenseToDelete(expense);
+                                                setShowDeleteModal(true);
+                                            }}
+                                            className="btn btn-danger delete-btn"
+                                            title="Delete expense"
+                                            disabled={isSettling}
+                                        >
+                                            <FaTrash />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="expense-actions">
-                                    <button
-                                        onClick={() => {
-                                            setExpenseToEdit(expense);
-                                            setShowEditModal(true);
-                                        }}
-                                        className="btn btn-secondary edit-btn"
-                                        title="Edit expense"
-                                    >
-                                        <FaEdit />
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setExpenseToDelete(expense);
-                                            setShowDeleteModal(true);
-                                        }}
-                                        className="btn btn-danger delete-btn"
-                                        title="Delete expense"
-                                    >
-                                        <FaTrash />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -297,6 +437,40 @@ export default function Expenses() {
                 confirmText="Delete"
                 cancelText="Cancel"
             />
+
+            {/* Settlement Modal */}
+            <Modal
+                isOpen={showSettlementModal}
+                title="Mark Expense as Settled"
+                onConfirm={() => handleExpenseSettlement({
+                    fromUser: expenseToSettle?.person,
+                    toUser: 'Group',
+                    amount: expenseToSettle?.amount,
+                    description: `Settlement for: ${expenseToSettle?.description}`
+                })}
+                onCancel={() => {
+                    if (settlingExpense !== expenseToSettle?.id) {
+                        setShowSettlementModal(false);
+                        setExpenseToSettle(null);
+                    }
+                }}
+                confirmText={settlingExpense === expenseToSettle?.id ? "Settling..." : "Confirm"}
+                cancelText="Cancel"
+                isConfirming={settlingExpense === expenseToSettle?.id}
+                customContent={
+                    expenseToSettle && (
+                        <div className="settlement-modal-content">
+                            <div className="settlement-details">
+                                <p><strong>Expense:</strong> {expenseToSettle.description}</p>
+                                <p><strong>Amount:</strong> £{expenseToSettle.amount.toFixed(2)}</p>
+                                <p><strong>Paid by:</strong> {expenseToSettle.person}</p>
+                                <p><strong>Date:</strong> {formatDate(expenseToSettle.date)}</p>
+                            </div>
+                        </div>
+                    )
+                }
+            />
+
             <EditExpenseModal
                 isOpen={showEditModal}
                 expense={expenseToEdit}
