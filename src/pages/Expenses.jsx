@@ -17,8 +17,10 @@ import EditExpenseModal from '../components/Modal/EditExpenseModal';
 import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { CategoryIcon } from '@/lib/categoryIcon';
+import { getCategoryDef } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 const selectTriggerClass =
     'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
@@ -139,8 +141,6 @@ export default function Expenses() {
         });
     };
 
-    const categoryLabel = (expense) => expense.category || expense.paymentMode || 'Other';
-
     const filtered = getFilteredExpenses();
 
     if (loading) {
@@ -238,15 +238,23 @@ export default function Expenses() {
                             {filtered.map((expense) => (
                                 <li key={expense.id}>
                                     <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
-                                        <div className="min-w-0 flex-1">
-                                            <p className="font-semibold text-foreground">{expense.description}</p>
-                                            <div className="mt-1 flex flex-wrap gap-2">
-                                                <Badge variant="secondary" className="font-normal">
+                                        <div className="flex min-w-0 flex-1 items-center gap-4">
+                                            <div
+                                                className={cn(
+                                                    'flex shrink-0 rounded-full p-2',
+                                                    getCategoryDef(expense.category ?? expense.paymentMode).color
+                                                )}
+                                            >
+                                                <CategoryIcon
+                                                    categoryRef={expense.category ?? expense.paymentMode}
+                                                    size={18}
+                                                />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-semibold text-foreground">{expense.description}</p>
+                                                <p className="mt-0.5 text-sm text-muted-foreground">
                                                     {formatDate(expense.date)}
-                                                </Badge>
-                                                <Badge variant="outline" className="font-normal">
-                                                    {categoryLabel(expense)}
-                                                </Badge>
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="flex shrink-0 items-center gap-3">

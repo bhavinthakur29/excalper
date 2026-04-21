@@ -12,14 +12,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-const selectClassName =
-    'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { CATEGORIES, DEFAULT_CATEGORY_ID, resolveCategoryId } from '@/lib/constants';
 
 export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('');
+    const [category, setCategory] = useState(DEFAULT_CATEGORY_ID);
     const [date, setDate] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -27,7 +32,8 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
         if (expense) {
             setDescription(expense.description || '');
             setAmount(String(expense.amount ?? ''));
-            setCategory(expense.category || expense.paymentMode || '');
+            const raw = expense.category ?? expense.paymentMode ?? '';
+            setCategory(resolveCategoryId(raw));
             setDate(expense.date ? new Date(expense.date).toISOString().slice(0, 10) : '');
         }
     }, [expense]);
@@ -108,19 +114,22 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-expense-category">Category</Label>
-                            <select
-                                id="edit-expense-category"
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className={selectClassName}
-                                required
-                            >
-                                <option value="">Select</option>
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="contactless">Contactless</option>
-                                <option value="net banking">Net banking</option>
-                            </select>
+                            <Select value={category} onValueChange={setCategory} required>
+                                <SelectTrigger
+                                    id="edit-expense-category"
+                                    className="min-h-12 w-full touch-manipulation sm:min-h-10"
+                                    aria-label="Expense category"
+                                >
+                                    <SelectValue placeholder="Choose category" />
+                                </SelectTrigger>
+                                <SelectContent position="popper" className="max-h-[min(24rem,70vh)]">
+                                    {CATEGORIES.map(({ id, label }) => (
+                                        <SelectItem key={id} value={id}>
+                                            {label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-expense-date">Date</Label>

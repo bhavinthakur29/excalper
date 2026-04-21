@@ -9,7 +9,9 @@ import { toast } from 'react-toastify';
 import { toJsDate } from '../utils/timestamps';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { CategoryIcon } from '@/lib/categoryIcon';
+import { getCategoryDef } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 const sectionMotion = {
     initial: { opacity: 0, y: 15 },
@@ -89,8 +91,6 @@ export default function Home() {
             year: 'numeric',
         });
     };
-
-    const categoryLabel = (expense) => expense.category || expense.paymentMode || 'Other';
 
     if (loading) {
         return (
@@ -196,16 +196,24 @@ export default function Home() {
                             <ul role="list">
                                 {recentExpenses.map((expense) => (
                                     <li key={expense.id}>
-                                        <div className="flex items-center justify-between border-b p-4 last:border-0">
-                                            <div className="min-w-0 flex-1 pr-3">
-                                                <p className="font-semibold text-foreground">{expense.description}</p>
-                                                <div className="mt-1 flex flex-wrap gap-2">
-                                                    <Badge variant="secondary" className="font-normal">
+                                        <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
+                                            <div className="flex min-w-0 flex-1 items-center gap-4">
+                                                <div
+                                                    className={cn(
+                                                        'flex shrink-0 rounded-full p-2',
+                                                        getCategoryDef(expense.category ?? expense.paymentMode).color
+                                                    )}
+                                                >
+                                                    <CategoryIcon
+                                                        categoryRef={expense.category ?? expense.paymentMode}
+                                                        size={18}
+                                                    />
+                                                </div>
+                                                <div className="min-w-0 flex-1 pr-2">
+                                                    <p className="font-semibold text-foreground">{expense.description}</p>
+                                                    <p className="mt-0.5 text-sm text-muted-foreground">
                                                         {formatDate(expense.date)}
-                                                    </Badge>
-                                                    <Badge variant="outline" className="font-normal">
-                                                        {categoryLabel(expense)}
-                                                    </Badge>
+                                                    </p>
                                                 </div>
                                             </div>
                                             <p className="shrink-0 text-base font-bold tabular-nums">
