@@ -40,7 +40,7 @@ export default function Navbar() {
                 <Link
                     to="/"
                     className="inline-flex items-center gap-2 font-semibold text-foreground"
-                    aria-label="Excalper home"
+                    aria-label="Excalper Home"
                 >
                     <Wallet className="h-5 w-5 text-primary" aria-hidden="true" />
                     <span>Excalper</span>
