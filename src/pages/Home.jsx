@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Plus, User, ArrowUpRight } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { toJsDate } from '../utils/timestamps';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import CategoryFilterChips from '@/components/CategoryFilterChips';
 import { CategoryIcon } from '@/lib/categoryIcon';
-import { getCategoryDef } from '@/lib/constants';
+import { getCategoryDef, resolveCategoryId } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 const sectionMotion = {
@@ -26,6 +27,7 @@ export default function Home() {
     const [recentExpenses, setRecentExpenses] = useState([]);
     const [photoBase64, setPhotoBase64] = useState('');
     const [monthlyTotal, setMonthlyTotal] = useState(0);
+    const [activeCategory, setActiveCategory] = useState('all');
 
     useEffect(() => {
         if (user) {
@@ -91,6 +93,13 @@ export default function Home() {
             year: 'numeric',
         });
     };
+
+    const filteredRecentExpenses = useMemo(() => {
+        if (activeCategory === 'all') return recentExpenses;
+        return recentExpenses.filter(
+            (exp) => resolveCategoryId(exp.category ?? exp.paymentMode) === activeCategory
+        );
+    }, [recentExpenses, activeCategory]);
 
     if (loading) {
         return (
@@ -193,36 +202,66 @@ export default function Home() {
                                 </div>
                             </div>
                         ) : (
-                            <ul role="list">
-                                {recentExpenses.map((expense) => (
-                                    <li key={expense.id}>
-                                        <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
-                                            <div className="flex min-w-0 flex-1 items-center gap-4">
-                                                <div
-                                                    className={cn(
-                                                        'flex shrink-0 rounded-full p-2',
-                                                        getCategoryDef(expense.category ?? expense.paymentMode).color
-                                                    )}
+                            <>
+                                <div className="px-4 pt-2">
+                                    <CategoryFilterChips
+                                        activeCategory={activeCategory}
+                                        onCategoryChange={setActiveCategory}
+                                    />
+                                </div>
+                                {activeCategory !== 'all' && filteredRecentExpenses.length === 0 ? (
+                                    <div className="px-4 pb-6 pt-2 text-center">
+                                        <p className="text-sm text-muted-foreground">
+                                            No transactions found in this category.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <motion.ul layout className="list-none" role="list">
+                                        <AnimatePresence mode="popLayout" initial={false}>
+                                            {filteredRecentExpenses.map((expense) => (
+                                                <motion.li
+                                                    key={expense.id}
+                                                    layout
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -10 }}
+                                                    transition={{ duration: 0.22 }}
                                                 >
-                                                    <CategoryIcon
-                                                        categoryRef={expense.category ?? expense.paymentMode}
-                                                        size={18}
-                                                    />
-                                                </div>
-                                                <div className="min-w-0 flex-1 pr-2">
-                                                    <p className="font-semibold text-foreground">{expense.description}</p>
-                                                    <p className="mt-0.5 text-sm text-muted-foreground">
-                                                        {formatDate(expense.date)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <p className="shrink-0 text-base font-bold tabular-nums">
-                                                £{expense.amount.toFixed(2)}
-                                            </p>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
+                                                    <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
+                                                        <div className="flex min-w-0 flex-1 items-center gap-4">
+                                                            <div
+                                                                className={cn(
+                                                                    'flex shrink-0 rounded-full p-2',
+                                                                    getCategoryDef(expense.category ?? expense.paymentMode)
+                                                                        .color
+                                                                )}
+                                                            >
+                                                                <CategoryIcon
+                                                                    categoryRef={
+                                                                        expense.category ?? expense.paymentMode
+                                                                    }
+                                                                    size={18}
+                                                                />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1 pr-2">
+                                                                <p className="font-semibold text-foreground">
+                                                                    {expense.description}
+                                                                </p>
+                                                                <p className="mt-0.5 text-sm text-muted-foreground">
+                                                                    {formatDate(expense.date)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <p className="shrink-0 text-base font-bold tabular-nums">
+                                                            £{expense.amount.toFixed(2)}
+                                                        </p>
+                                                    </div>
+                                                </motion.li>
+                                            ))}
+                                        </AnimatePresence>
+                                    </motion.ul>
+                                )}
+                            </>
                         )}
                     </CardContent>
                 </Card>

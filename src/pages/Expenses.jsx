@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -18,8 +19,9 @@ import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import CategoryFilterChips from '@/components/CategoryFilterChips';
 import { CategoryIcon } from '@/lib/categoryIcon';
-import { getCategoryDef } from '@/lib/constants';
+import { getCategoryDef, resolveCategoryId } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 const selectTriggerClass =
@@ -31,6 +33,7 @@ export default function Expenses() {
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState('');
+    const [activeCategory, setActiveCategory] = useState('all');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState(null);
     const [monthlyExpenses, setMonthlyExpenses] = useState({});
@@ -50,7 +53,7 @@ export default function Expenses() {
 
     useEffect(() => {
         calculateStats();
-    }, [expenses, selectedMonth]);
+    }, [expenses, selectedMonth, activeCategory]);
 
     const fetchExpenses = async () => {
         try {
@@ -90,6 +93,12 @@ export default function Expenses() {
             });
         }
 
+        if (activeCategory !== 'all') {
+            filteredExpenses = filteredExpenses.filter(
+                (exp) => resolveCategoryId(exp.category ?? exp.paymentMode) === activeCategory
+            );
+        }
+
         const total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
         const count = filteredExpenses.length;
         const average = count > 0 ? total / count : 0;
@@ -119,6 +128,12 @@ export default function Expenses() {
                 const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === selectedMonth;
             });
+        }
+
+        if (activeCategory !== 'all') {
+            filtered = filtered.filter(
+                (exp) => resolveCategoryId(exp.category ?? exp.paymentMode) === activeCategory
+            );
         }
 
         return filtered;
@@ -224,7 +239,7 @@ export default function Expenses() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {filtered.length === 0 ? (
+                    {expenses.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 p-8 text-center text-muted-foreground">
                             <Wallet className="h-10 w-10 opacity-40" />
                             <p className="text-sm">No expenses found. Add your first expense to get started.</p>
@@ -234,62 +249,95 @@ export default function Expenses() {
                             </Button>
                         </div>
                     ) : (
-                        <ul role="list">
-                            {filtered.map((expense) => (
-                                <li key={expense.id}>
-                                    <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
-                                        <div className="flex min-w-0 flex-1 items-center gap-4">
-                                            <div
-                                                className={cn(
-                                                    'flex shrink-0 rounded-full p-2',
-                                                    getCategoryDef(expense.category ?? expense.paymentMode).color
-                                                )}
+                        <>
+                            <div className="px-4 pt-4">
+                                <CategoryFilterChips
+                                    activeCategory={activeCategory}
+                                    onCategoryChange={setActiveCategory}
+                                />
+                            </div>
+                            {filtered.length === 0 ? (
+                                <div className="flex flex-col items-center gap-2 px-4 pb-8 pt-2 text-center text-muted-foreground">
+                                    <Wallet className="h-10 w-10 opacity-40" />
+                                    <p className="text-sm">
+                                        {activeCategory !== 'all'
+                                            ? 'No transactions found in this category.'
+                                            : 'No expenses match your filters.'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <motion.ul layout className="list-none" role="list">
+                                    <AnimatePresence mode="popLayout" initial={false}>
+                                        {filtered.map((expense) => (
+                                            <motion.li
+                                                key={expense.id}
+                                                layout
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.22 }}
                                             >
-                                                <CategoryIcon
-                                                    categoryRef={expense.category ?? expense.paymentMode}
-                                                    size={18}
-                                                />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="font-semibold text-foreground">{expense.description}</p>
-                                                <p className="mt-0.5 text-sm text-muted-foreground">
-                                                    {formatDate(expense.date)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex shrink-0 items-center gap-3">
-                                            <span className="text-base font-bold tabular-nums text-foreground">
-                                                £{expense.amount.toFixed(2)}
-                                            </span>
-                                            <Button
-                                                type="button"
-                                                size="icon"
-                                                variant="outline"
-                                                title="Edit expense"
-                                                onClick={() => {
-                                                    setExpenseToEdit(expense);
-                                                    setShowEditModal(true);
-                                                }}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="icon"
-                                                variant="destructive"
-                                                title="Delete expense"
-                                                onClick={() => {
-                                                    setExpenseToDelete(expense);
-                                                    setShowDeleteModal(true);
-                                                }}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                                                <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
+                                                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                                                        <div
+                                                            className={cn(
+                                                                'flex shrink-0 rounded-full p-2',
+                                                                getCategoryDef(expense.category ?? expense.paymentMode)
+                                                                    .color
+                                                            )}
+                                                        >
+                                                            <CategoryIcon
+                                                                categoryRef={
+                                                                    expense.category ?? expense.paymentMode
+                                                                }
+                                                                size={18}
+                                                            />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="font-semibold text-foreground">
+                                                                {expense.description}
+                                                            </p>
+                                                            <p className="mt-0.5 text-sm text-muted-foreground">
+                                                                {formatDate(expense.date)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex shrink-0 items-center gap-3">
+                                                        <span className="text-base font-bold tabular-nums text-foreground">
+                                                            £{expense.amount.toFixed(2)}
+                                                        </span>
+                                                        <Button
+                                                            type="button"
+                                                            size="icon"
+                                                            variant="outline"
+                                                            title="Edit expense"
+                                                            onClick={() => {
+                                                                setExpenseToEdit(expense);
+                                                                setShowEditModal(true);
+                                                            }}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="icon"
+                                                            variant="destructive"
+                                                            title="Delete expense"
+                                                            onClick={() => {
+                                                                setExpenseToDelete(expense);
+                                                                setShowDeleteModal(true);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </motion.li>
+                                        ))}
+                                    </AnimatePresence>
+                                </motion.ul>
+                            )}
+                        </>
                     )}
                 </CardContent>
             </Card>
