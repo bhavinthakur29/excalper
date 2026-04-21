@@ -8,6 +8,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { FaUser, FaEnvelope, FaLock, FaPalette, FaTrash, FaSignOutAlt, FaSave, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
+import { backfillMissingTimestamps } from '../utils/backfillTimestamps';
 import './Settings.css';
 
 export default function Settings() {
@@ -25,6 +26,7 @@ export default function Settings() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [photoBase64, setPhotoBase64] = useState('');
+    const [backfillingTimestamps, setBackfillingTimestamps] = useState(false);
 
     const storage = getStorage();
     const [uploading, setUploading] = useState(false);
@@ -145,6 +147,23 @@ export default function Settings() {
             toast.success('Logged out successfully');
         } catch (error) {
             toast.error('Failed to logout');
+        }
+    };
+
+    const handleTimestampBackfill = async () => {
+        if (!user?.uid) return;
+        setBackfillingTimestamps(true);
+        try {
+            const updatedCount = await backfillMissingTimestamps(user.uid);
+            if (updatedCount === 0) {
+                toast.info('No legacy documents needed timestamp backfill.');
+            } else {
+                toast.success(`Backfilled timestamps in ${updatedCount} document(s).`);
+            }
+        } catch (error) {
+            toast.error('Timestamp backfill failed. Please try again.');
+        } finally {
+            setBackfillingTimestamps(false);
         }
     };
 
@@ -292,6 +311,13 @@ export default function Settings() {
                 <div className="settings-actions">
                     <button onClick={handleLogout} className="btn btn-secondary">
                         <FaSignOutAlt /> Logout
+                    </button>
+                    <button
+                        onClick={handleTimestampBackfill}
+                        className="btn btn-secondary"
+                        disabled={backfillingTimestamps}
+                    >
+                        {backfillingTimestamps ? 'Backfilling...' : 'Backfill Legacy Timestamps'}
                     </button>
                     <button
                         onClick={() => setShowDeleteModal(true)}

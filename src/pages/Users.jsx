@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaPlus, FaTrash, FaUser, FaUsers, FaChartPie, FaCalendarAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
+import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
 import './Users.css';
 
 export default function Users() {
@@ -49,13 +50,14 @@ export default function Users() {
             const expensesList = expensesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setExpenses(expensesList);
 
             // Group expenses by month
             const grouped = expensesList.reduce((acc, expense) => {
-                const month = expense.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const month = monthKeyFromTimestamp(expense.timestamp);
+                if (!month) return acc;
                 if (!acc[month]) acc[month] = [];
                 acc[month].push(expense);
                 return acc;
@@ -122,7 +124,7 @@ export default function Users() {
 
         if (monthFilter) {
             userExpenses = userExpenses.filter(exp => {
-                const expMonth = exp.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === monthFilter;
             });
         }
@@ -135,7 +137,7 @@ export default function Users() {
 
         if (monthFilter) {
             totalExpenses = expenses.filter(exp => {
-                const expMonth = exp.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === monthFilter;
             });
         }
@@ -161,11 +163,13 @@ export default function Users() {
         });
     };
 
-    const availableMonths = Object.keys(monthlyExpenses).sort((a, b) => {
-        const dateA = new Date(a);
-        const dateB = new Date(b);
-        return dateB - dateA;
-    });
+    const availableMonths = Object.keys(monthlyExpenses).sort((a, b) => b.localeCompare(a));
+
+    const formatMonthLabel = (monthKey) => {
+        const [year, month] = monthKey.split('-').map(Number);
+        if (!year || !month) return monthKey;
+        return new Date(year, month - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    };
 
     if (loading) {
         return (
@@ -209,7 +213,7 @@ export default function Users() {
                 >
                     <option value="">All Months</option>
                     {availableMonths.map(month => (
-                        <option key={month} value={month}>{month}</option>
+                        <option key={month} value={month}>{formatMonthLabel(month)}</option>
                     ))}
                 </select>
             </div>
@@ -249,7 +253,7 @@ export default function Users() {
             {/* Expense Distribution */}
             {users.length > 0 && (
                 <div className="distribution-section">
-                    <h2><FaChartPie /> Expense Distribution {selectedMonth && `- ${selectedMonth}`}</h2>
+                    <h2><FaChartPie /> Expense Distribution {selectedMonth && `- ${formatMonthLabel(selectedMonth)}`}</h2>
                     <div className="distribution-summary">
                         <div className="summary-card">
                             <h3>Total Expenses</h3>

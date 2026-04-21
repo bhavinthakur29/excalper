@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaChartPie, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaBalanceScale, FaCheckCircle, FaHistory } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
+import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
 import './Contributions.css';
 
 export default function Contributions() {
@@ -34,7 +35,7 @@ export default function Contributions() {
             const expensesList = expensesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setExpenses(expensesList);
 
@@ -45,13 +46,14 @@ export default function Contributions() {
             const settlementsList = settlementsSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setSettlements(settlementsList);
 
             // Group expenses by month
             const grouped = expensesList.reduce((acc, expense) => {
-                const month = expense.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const month = monthKeyFromTimestamp(expense.timestamp);
+                if (!month) return acc;
                 if (!acc[month]) acc[month] = [];
                 acc[month].push(expense);
                 return acc;
@@ -79,7 +81,7 @@ export default function Contributions() {
 
         if (monthFilter) {
             userExpenses = userExpenses.filter(exp => {
-                const expMonth = exp.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === monthFilter;
             });
         }
@@ -92,7 +94,7 @@ export default function Contributions() {
 
         if (monthFilter) {
             userSettlements = userSettlements.filter(s => {
-                const settlementMonth = s.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const settlementMonth = monthKeyFromTimestamp(s.timestamp);
                 return settlementMonth === monthFilter;
             });
         }
@@ -113,7 +115,7 @@ export default function Contributions() {
 
         if (monthFilter) {
             totalExpenses = expenses.filter(exp => {
-                const expMonth = exp.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === monthFilter;
             });
         }
@@ -220,13 +222,16 @@ export default function Contributions() {
         }
     };
 
-    const availableMonths = Object.keys(monthlyExpenses).sort((a, b) => {
-        const dateA = new Date(a);
-        const dateB = new Date(b);
-        return dateB - dateA;
-    });
+    const availableMonths = Object.keys(monthlyExpenses).sort((a, b) => b.localeCompare(a));
+
+    const formatMonthLabel = (monthKey) => {
+        const [year, month] = monthKey.split('-').map(Number);
+        if (!year || !month) return monthKey;
+        return new Date(year, month - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    };
 
     const formatDate = (date) => {
+        if (!date) return 'Unknown date';
         return date.toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'short',
@@ -259,7 +264,7 @@ export default function Contributions() {
                 >
                     <option value="">All Months</option>
                     {availableMonths.map(month => (
-                        <option key={month} value={month}>{month}</option>
+                        <option key={month} value={month}>{formatMonthLabel(month)}</option>
                     ))}
                 </select>
             </div>
@@ -299,7 +304,7 @@ export default function Contributions() {
             {users.length > 0 ? (
                 <div className="distribution-section">
                     <div className="distribution-header">
-                        <h2><FaChartPie /> Expense Distribution {selectedMonth && `- ${selectedMonth}`}</h2>
+                        <h2><FaChartPie /> Expense Distribution {selectedMonth && `- ${formatMonthLabel(selectedMonth)}`}</h2>
                         <div className="distribution-actions">
                             <button
                                 onClick={() => setShowSettlementHistory(true)}

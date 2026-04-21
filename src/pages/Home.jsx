@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaMoneyBillWave, FaUsers, FaCalendarAlt, FaChartBar, FaPlus, FaCog, FaUser, FaHistory, FaCheckCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { doc, getDoc } from 'firebase/firestore';
+import { toJsDate } from '../utils/timestamps';
 import './Home.css';
 
 export default function Home() {
@@ -54,7 +55,7 @@ export default function Home() {
             const expensesList = expensesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setRecentExpenses(expensesList);
 
@@ -65,7 +66,7 @@ export default function Home() {
             const settlementsList = settlementsSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setRecentSettlements(settlementsList);
 
@@ -73,14 +74,14 @@ export default function Home() {
             const allExpensesSnapshot = await getDocs(expensesRef);
             const allExpenses = allExpensesSnapshot.docs.map(doc => ({
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
 
             // Fetch all settlements for stats
             const allSettlementsSnapshot = await getDocs(settlementsRef);
             const allSettlements = allSettlementsSnapshot.docs.map(doc => ({
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
 
             // Fetch users count
@@ -97,6 +98,7 @@ export default function Home() {
             const now = new Date();
             const thisMonth = allExpenses.filter(exp => {
                 const expDate = exp.date;
+                if (!expDate) return false;
                 return expDate.getMonth() === now.getMonth() &&
                     expDate.getFullYear() === now.getFullYear();
             }).reduce((sum, exp) => sum + exp.amount, 0);
@@ -117,6 +119,7 @@ export default function Home() {
     };
 
     const formatDate = (date) => {
+        if (!date) return 'Unknown date';
         return date.toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'short',

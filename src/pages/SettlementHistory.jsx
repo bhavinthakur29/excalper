@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaHistory, FaTrash, FaFilter, FaChartBar, FaMoneyBillWave, FaCalendarAlt, FaUsers } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
+import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
 import './SettlementHistory.css';
 
 export default function SettlementHistory() {
@@ -43,13 +44,14 @@ export default function SettlementHistory() {
             const settlementsList = settlementsSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setSettlements(settlementsList);
 
             // Group settlements by month
             const grouped = settlementsList.reduce((acc, settlement) => {
-                const month = settlement.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const month = monthKeyFromTimestamp(settlement.timestamp);
+                if (!month) return acc;
                 if (!acc[month]) acc[month] = [];
                 acc[month].push(settlement);
                 return acc;
@@ -74,7 +76,7 @@ export default function SettlementHistory() {
 
         if (selectedMonth) {
             filteredSettlements = filteredSettlements.filter(s => {
-                const settlementMonth = s.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const settlementMonth = monthKeyFromTimestamp(s.timestamp);
                 return settlementMonth === selectedMonth;
             });
         }
@@ -109,7 +111,7 @@ export default function SettlementHistory() {
 
         if (selectedMonth) {
             filtered = filtered.filter(s => {
-                const settlementMonth = s.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const settlementMonth = monthKeyFromTimestamp(s.timestamp);
                 return settlementMonth === selectedMonth;
             });
         }
@@ -137,13 +139,16 @@ export default function SettlementHistory() {
         }
     };
 
-    const availableMonths = Object.keys(monthlySettlements).sort((a, b) => {
-        const dateA = new Date(a);
-        const dateB = new Date(b);
-        return dateB - dateA;
-    });
+    const availableMonths = Object.keys(monthlySettlements).sort((a, b) => b.localeCompare(a));
+
+    const formatMonthLabel = (monthKey) => {
+        const [year, month] = monthKey.split('-').map(Number);
+        if (!year || !month) return monthKey;
+        return new Date(year, month - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    };
 
     const formatDate = (date) => {
+        if (!date) return 'Unknown date';
         return date.toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'short',
@@ -181,7 +186,7 @@ export default function SettlementHistory() {
                         >
                             <option value="">All Months</option>
                             {availableMonths.map(month => (
-                                <option key={month} value={month}>{month}</option>
+                                <option key={month} value={month}>{formatMonthLabel(month)}</option>
                             ))}
                         </select>
                     </div>
@@ -243,7 +248,7 @@ export default function SettlementHistory() {
 
             {/* Settlements List */}
             <div className="settlements-section">
-                <h2><FaHistory /> Settlements {selectedMonth && `- ${selectedMonth}`} {selectedUser && `- ${selectedUser}`}</h2>
+                <h2><FaHistory /> Settlements {selectedMonth && `- ${formatMonthLabel(selectedMonth)}`} {selectedUser && `- ${selectedUser}`}</h2>
 
                 {getFilteredSettlements().length === 0 ? (
                     <div className="no-settlements">

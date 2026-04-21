@@ -7,6 +7,7 @@ import { FaPlus, FaTrash, FaEdit, FaCalendarAlt, FaFilter, FaChartBar, FaMoneyBi
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
 import EditExpenseModal from '../components/Modal/EditExpenseModal';
+import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
 import './Expenses.css';
 
 export default function Expenses() {
@@ -56,13 +57,14 @@ export default function Expenses() {
                 id: doc.id,
                 ...doc.data(),
                 userId: user.uid,
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setExpenses(expensesList);
 
             // Group expenses by month
             const grouped = expensesList.reduce((acc, expense) => {
-                const month = expense.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const month = monthKeyFromTimestamp(expense.timestamp);
+                if (!month) return acc;
                 if (!acc[month]) acc[month] = [];
                 acc[month].push(expense);
                 return acc;
@@ -83,7 +85,7 @@ export default function Expenses() {
             const settlementsList = settlementsSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                date: doc.data().timestamp?.toDate() || new Date()
+                date: toJsDate(doc.data().timestamp),
             }));
             setSettlements(settlementsList);
         } catch (error) {
@@ -120,7 +122,7 @@ export default function Expenses() {
 
         if (selectedMonth) {
             filteredExpenses = filteredExpenses.filter(exp => {
-                const expMonth = exp.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === selectedMonth;
             });
         }
@@ -191,7 +193,7 @@ export default function Expenses() {
 
         if (selectedMonth) {
             filtered = filtered.filter(exp => {
-                const expMonth = exp.date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === selectedMonth;
             });
         }
@@ -210,13 +212,16 @@ export default function Expenses() {
         return filtered;
     };
 
-    const availableMonths = Object.keys(monthlyExpenses).sort((a, b) => {
-        const dateA = new Date(a);
-        const dateB = new Date(b);
-        return dateB - dateA;
-    });
+    const availableMonths = Object.keys(monthlyExpenses).sort((a, b) => b.localeCompare(a));
+
+    const formatMonthLabel = (monthKey) => {
+        const [year, month] = monthKey.split('-').map(Number);
+        if (!year || !month) return monthKey;
+        return new Date(year, month - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+    };
 
     const formatDate = (date) => {
+        if (!date) return 'Unknown date';
         return date.toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'short',
@@ -294,7 +299,7 @@ export default function Expenses() {
                         >
                             <option value="">All Months</option>
                             {availableMonths.map(month => (
-                                <option key={month} value={month}>{month}</option>
+                                <option key={month} value={month}>{formatMonthLabel(month)}</option>
                             ))}
                         </select>
                     </div>

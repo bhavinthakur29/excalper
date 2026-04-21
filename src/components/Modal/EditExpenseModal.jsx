@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FaTimes } from 'react-icons/fa';
 import './EditExpenseModal.css';
@@ -60,7 +60,7 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave, peo
                 amount: parseFloat(amount),
                 person,
                 paymentMode,
-                timestamp: new Date(date),
+                timestamp: Timestamp.fromDate(new Date(`${date}T00:00:00`)),
             });
 
             if (onSave) onSave();
