@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, addDoc, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { FaChartPie, FaUsers, FaMoneyBillWave, FaCalendarAlt, FaBalanceScale, FaCheckCircle, FaHistory } from 'react-icons/fa';
@@ -162,36 +162,58 @@ export default function Contributions() {
 
     const settleAllBalances = async () => {
         const distribution = calculateDistribution(selectedMonth);
-        const settlements = [];
+        const debtors = distribution
+            .filter((d) => d.balance < -0.01)
+            .map((d) => ({ name: d.name, amount: Math.abs(d.balance) }))
+            .sort((a, b) => b.amount - a.amount);
 
-        // Find who owes and who is owed
-        const debtors = distribution.filter(d => d.balance < 0);
-        const creditors = distribution.filter(d => d.balance > 0);
+        const creditors = distribution
+            .filter((d) => d.balance > 0.01)
+            .map((d) => ({ name: d.name, amount: d.balance }))
+            .sort((a, b) => b.amount - a.amount);
 
-        // Create settlement records
-        debtors.forEach(debtor => {
-            const amount = Math.abs(debtor.balance);
-            // Find a creditor to pay
-            const creditor = creditors.find(c => c.balance > 0);
-            if (creditor) {
-                settlements.push({
-                    fromUser: debtor.name,
-                    toUser: creditor.name,
-                    amount: Math.min(amount, creditor.balance),
-                    description: `Settlement for ${selectedMonth || 'all expenses'}`,
-                    timestamp: serverTimestamp(),
-                    status: 'completed'
-                });
-            }
-        });
+        if (!debtors.length || !creditors.length) {
+            toast.info('No outstanding balances to settle.');
+            return;
+        }
 
-        // Save all settlements
+        const newSettlements = [];
+
+        // Greedy simplification: always match the largest debtor and creditor until residuals are near zero.
+        while (debtors.length && creditors.length) {
+            const debtor = debtors[0];
+            const creditor = creditors[0];
+
+            const settleAmount = Math.min(debtor.amount, creditor.amount);
+
+            newSettlements.push({
+                fromUser: debtor.name,
+                toUser: creditor.name,
+                amount: Number(settleAmount.toFixed(2)),
+                description: `Settlement for ${selectedMonth || 'all expenses'}`,
+                timestamp: serverTimestamp(),
+                status: 'completed'
+            });
+
+            debtor.amount = Number((debtor.amount - settleAmount).toFixed(2));
+            creditor.amount = Number((creditor.amount - settleAmount).toFixed(2));
+
+            if (debtor.amount <= 0.01) debtors.shift();
+            if (creditor.amount <= 0.01) creditors.shift();
+
+            debtors.sort((a, b) => b.amount - a.amount);
+            creditors.sort((a, b) => b.amount - a.amount);
+        }
+
         try {
-            const settlementPromises = settlements.map(settlement =>
-                addDoc(collection(db, 'users', user.uid, 'settlements'), settlement)
-            );
-            await Promise.all(settlementPromises);
-            toast.success('All balances settled!');
+            const batch = writeBatch(db);
+            newSettlements.forEach((settlement) => {
+                const settlementRef = doc(collection(db, 'users', user.uid, 'settlements'));
+                batch.set(settlementRef, settlement);
+            });
+
+            await batch.commit();
+            toast.success(`Created ${newSettlements.length} settlement(s).`);
             fetchData();
         } catch (error) {
             toast.error('Failed to settle balances');
