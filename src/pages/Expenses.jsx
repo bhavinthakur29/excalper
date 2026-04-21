@@ -19,7 +19,7 @@ import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import CategoryFilterChips from '@/components/CategoryFilterChips';
+import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 import { CategoryIcon } from '@/lib/categoryIcon';
 import { getCategoryDef, resolveCategoryId } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -33,7 +33,7 @@ export default function Expenses() {
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState('');
-    const [activeCategory, setActiveCategory] = useState('all');
+    const [selectedCategories, setSelectedCategories] = useState([]);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState(null);
     const [monthlyExpenses, setMonthlyExpenses] = useState({});
@@ -53,7 +53,7 @@ export default function Expenses() {
 
     useEffect(() => {
         calculateStats();
-    }, [expenses, selectedMonth, activeCategory]);
+    }, [expenses, selectedMonth, selectedCategories]);
 
     const fetchExpenses = async () => {
         try {
@@ -93,10 +93,11 @@ export default function Expenses() {
             });
         }
 
-        if (activeCategory !== 'all') {
-            filteredExpenses = filteredExpenses.filter(
-                (exp) => resolveCategoryId(exp.category ?? exp.paymentMode) === activeCategory
-            );
+        if (selectedCategories.length > 0) {
+            filteredExpenses = filteredExpenses.filter((exp) => {
+                const cat = resolveCategoryId(exp.category ?? exp.paymentMode);
+                return selectedCategories.includes(cat);
+            });
         }
 
         const total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -130,10 +131,11 @@ export default function Expenses() {
             });
         }
 
-        if (activeCategory !== 'all') {
-            filtered = filtered.filter(
-                (exp) => resolveCategoryId(exp.category ?? exp.paymentMode) === activeCategory
-            );
+        if (selectedCategories.length > 0) {
+            filtered = filtered.filter((exp) => {
+                const cat = resolveCategoryId(exp.category ?? exp.paymentMode);
+                return selectedCategories.includes(cat);
+            });
         }
 
         return filtered;
@@ -233,10 +235,16 @@ export default function Expenses() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                        <BarChart3 className="h-5 w-5" aria-hidden="true" />
-                        All expenses ({filtered.length})
-                    </CardTitle>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <BarChart3 className="h-5 w-5 shrink-0" aria-hidden="true" />
+                            <span>All expenses ({filtered.length})</span>
+                        </CardTitle>
+                        <CategoryFilterMenu
+                            selectedCategories={selectedCategories}
+                            onChange={setSelectedCategories}
+                        />
+                    </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     {expenses.length === 0 ? (
@@ -250,17 +258,11 @@ export default function Expenses() {
                         </div>
                     ) : (
                         <>
-                            <div className="px-4 pt-4">
-                                <CategoryFilterChips
-                                    activeCategory={activeCategory}
-                                    onCategoryChange={setActiveCategory}
-                                />
-                            </div>
                             {filtered.length === 0 ? (
                                 <div className="flex flex-col items-center gap-2 px-4 pb-8 pt-2 text-center text-muted-foreground">
                                     <Wallet className="h-10 w-10 opacity-40" />
                                     <p className="text-sm">
-                                        {activeCategory !== 'all'
+                                        {selectedCategories.length > 0
                                             ? 'No transactions found in this category.'
                                             : 'No expenses match your filters.'}
                                     </p>

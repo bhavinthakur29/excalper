@@ -9,7 +9,7 @@ import { toast } from 'react-toastify';
 import { toJsDate } from '../utils/timestamps';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import CategoryFilterChips from '@/components/CategoryFilterChips';
+import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 import { CategoryIcon } from '@/lib/categoryIcon';
 import { getCategoryDef, resolveCategoryId } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ export default function Home() {
     const [recentExpenses, setRecentExpenses] = useState([]);
     const [photoBase64, setPhotoBase64] = useState('');
     const [monthlyTotal, setMonthlyTotal] = useState(0);
-    const [activeCategory, setActiveCategory] = useState('all');
+    const [selectedCategories, setSelectedCategories] = useState([]);
 
     useEffect(() => {
         if (user) {
@@ -95,11 +95,11 @@ export default function Home() {
     };
 
     const filteredRecentExpenses = useMemo(() => {
-        if (activeCategory === 'all') return recentExpenses;
-        return recentExpenses.filter(
-            (exp) => resolveCategoryId(exp.category ?? exp.paymentMode) === activeCategory
-        );
-    }, [recentExpenses, activeCategory]);
+        return recentExpenses.filter((t) => {
+            const cat = resolveCategoryId(t.category ?? t.paymentMode);
+            return selectedCategories.length === 0 || selectedCategories.includes(cat);
+        });
+    }, [recentExpenses, selectedCategories]);
 
     if (loading) {
         return (
@@ -181,7 +181,13 @@ export default function Home() {
                 <Card>
                     <CardHeader className="pb-0">
                         <div className="flex items-center justify-between gap-3">
-                            <CardTitle>Recent Expenses</CardTitle>
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                <CardTitle>Recent Expenses</CardTitle>
+                                <CategoryFilterMenu
+                                    selectedCategories={selectedCategories}
+                                    onChange={setSelectedCategories}
+                                />
+                            </div>
                             <Button type="button" variant="secondary" className="w-auto shrink-0" onClick={() => navigate('/expenses')}>
                                 View All
                             </Button>
@@ -203,13 +209,7 @@ export default function Home() {
                             </div>
                         ) : (
                             <>
-                                <div className="px-4 pt-2">
-                                    <CategoryFilterChips
-                                        activeCategory={activeCategory}
-                                        onCategoryChange={setActiveCategory}
-                                    />
-                                </div>
-                                {activeCategory !== 'all' && filteredRecentExpenses.length === 0 ? (
+                                {selectedCategories.length > 0 && filteredRecentExpenses.length === 0 ? (
                                     <div className="px-4 pb-6 pt-2 text-center">
                                         <p className="text-sm text-muted-foreground">
                                             No transactions found in this category.
