@@ -1,7 +1,7 @@
 import { collection, getDocs, writeBatch, doc, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
-const COLLECTIONS_TO_BACKFILL = ['expenses', 'settlements', 'people'];
+const COLLECTIONS_TO_BACKFILL = ['expenses'];
 
 export async function backfillMissingTimestamps(userId) {
     let updatedCount = 0;

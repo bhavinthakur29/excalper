@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { FaMoneyBillWave, FaUsers, FaCalendarAlt, FaChartBar, FaPlus, FaCog, FaUser, FaHistory, FaCheckCircle } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { Calendar, Plus, User, ArrowUpRight } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { doc, getDoc } from 'firebase/firestore';
 import { toJsDate } from '../utils/timestamps';
-import './Home.css';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+const sectionMotion = {
+    initial: { opacity: 0, y: 15 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4 },
+};
 
 export default function Home() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [recentExpenses, setRecentExpenses] = useState([]);
-    const [recentSettlements, setRecentSettlements] = useState([]);
     const [photoBase64, setPhotoBase64] = useState('');
-    const [stats, setStats] = useState({
-        totalExpenses: 0,
-        totalUsers: 0,
-        thisMonth: 0,
-        averageExpense: 0,
-        totalSettlements: 0,
-        totalSettledAmount: 0
-    });
+    const [monthlyTotal, setMonthlyTotal] = useState(0);
 
     useEffect(() => {
         if (user) {
@@ -48,69 +48,32 @@ export default function Home() {
 
     const fetchDashboardData = async () => {
         try {
-            // Fetch recent expenses
             const expensesRef = collection(db, 'users', user.uid, 'expenses');
             const expensesQuery = query(expensesRef, orderBy('timestamp', 'desc'), limit(5));
             const expensesSnapshot = await getDocs(expensesQuery);
-            const expensesList = expensesSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                date: toJsDate(doc.data().timestamp),
+            const expensesList = expensesSnapshot.docs.map((d) => ({
+                id: d.id,
+                ...d.data(),
+                date: toJsDate(d.data().timestamp),
             }));
             setRecentExpenses(expensesList);
 
-            // Fetch recent settlements
-            const settlementsRef = collection(db, 'users', user.uid, 'settlements');
-            const settlementsQuery = query(settlementsRef, orderBy('timestamp', 'desc'), limit(3));
-            const settlementsSnapshot = await getDocs(settlementsQuery);
-            const settlementsList = settlementsSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                date: toJsDate(doc.data().timestamp),
-            }));
-            setRecentSettlements(settlementsList);
-
-            // Fetch all expenses for stats
             const allExpensesSnapshot = await getDocs(expensesRef);
-            const allExpenses = allExpensesSnapshot.docs.map(doc => ({
-                ...doc.data(),
-                date: toJsDate(doc.data().timestamp),
+            const allExpenses = allExpensesSnapshot.docs.map((d) => ({
+                ...d.data(),
+                date: toJsDate(d.data().timestamp),
             }));
-
-            // Fetch all settlements for stats
-            const allSettlementsSnapshot = await getDocs(settlementsRef);
-            const allSettlements = allSettlementsSnapshot.docs.map(doc => ({
-                ...doc.data(),
-                date: toJsDate(doc.data().timestamp),
-            }));
-
-            // Fetch users count
-            const usersRef = collection(db, 'users', user.uid, 'people');
-            const usersSnapshot = await getDocs(usersRef);
-            const usersCount = usersSnapshot.size;
-
-            // Calculate stats
-            const totalExpenses = allExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-            const averageExpense = allExpenses.length > 0 ? totalExpenses / allExpenses.length : 0;
-            const totalSettlements = allSettlements.length;
-            const totalSettledAmount = allSettlements.reduce((sum, s) => sum + s.amount, 0);
 
             const now = new Date();
-            const thisMonth = allExpenses.filter(exp => {
-                const expDate = exp.date;
-                if (!expDate) return false;
-                return expDate.getMonth() === now.getMonth() &&
-                    expDate.getFullYear() === now.getFullYear();
-            }).reduce((sum, exp) => sum + exp.amount, 0);
+            const thisMonth = allExpenses
+                .filter((exp) => {
+                    const expDate = exp.date;
+                    if (!expDate) return false;
+                    return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
+                })
+                .reduce((sum, exp) => sum + exp.amount, 0);
 
-            setStats({
-                totalExpenses,
-                totalUsers: usersCount,
-                thisMonth,
-                averageExpense,
-                totalSettlements,
-                totalSettledAmount
-            });
+            setMonthlyTotal(thisMonth);
         } catch (error) {
             toast.error('Failed to load dashboard data');
         } finally {
@@ -123,231 +86,139 @@ export default function Home() {
         return date.toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'short',
-            year: 'numeric'
+            year: 'numeric',
         });
     };
 
-    const getPaymentModeIcon = (mode) => {
-        switch (mode.toLowerCase()) {
-            case 'cash':
-                return '💵';
-            case 'card':
-                return '💳';
-            case 'contactless':
-                return '📱';
-            case 'net banking':
-                return '🏦';
-            default:
-                return '💰';
-        }
-    };
+    const categoryLabel = (expense) => expense.category || expense.paymentMode || 'Other';
 
     if (loading) {
         return (
-            <div className="home-container">
-                <div className="loading-spinner">Loading dashboard...</div>
+            <div className="space-y-6 animate-in fade-in duration-500">
+                <Card className="animate-pulse">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center gap-4">
+                            <div className="h-16 w-16 rounded-full bg-muted sm:h-20 sm:w-20" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-4 w-40 rounded bg-muted" />
+                                <div className="h-3 w-56 rounded bg-muted/70" />
+                            </div>
+                        </div>
+                        <div className="mt-6 space-y-2">
+                            <div className="h-3 w-32 rounded bg-muted/70" />
+                            <div className="h-10 w-48 rounded bg-muted" />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="home-container">
-            <div className="home-header">
-                <div className="welcome-section">
-                    <h1>Welcome back, {user?.displayName || 'User'}!</h1>
-                    <p>Manage your expenses and track your spending</p>
-                </div>
-                <div className="user-avatar">
-                    {photoBase64 ? (
-                        <img src={photoBase64} alt="avatar" className="homepage-avatar" />
-                    ) : (
-                        <FaUser />
-                    )}
-                </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="stats-grid">
-                <div className="stat-card">
-                    <div className="stat-icon">
-                        <FaMoneyBillWave />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Total Expenses</h3>
-                        <p>£{stats.totalExpenses.toFixed(2)}</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon">
-                        <FaCalendarAlt />
-                    </div>
-                    <div className="stat-content">
-                        <h3>This Month</h3>
-                        <p>£{stats.thisMonth.toFixed(2)}</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon">
-                        <FaUsers />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Total Users</h3>
-                        <p>{stats.totalUsers}</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon">
-                        <FaChartBar />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Average Expense</h3>
-                        <p>£{stats.averageExpense.toFixed(2)}</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon">
-                        <FaHistory />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Total Settlements</h3>
-                        <p>{stats.totalSettlements}</p>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon">
-                        <FaCheckCircle />
-                    </div>
-                    <div className="stat-content">
-                        <h3>Settled Amount</h3>
-                        <p>£{stats.totalSettledAmount.toFixed(2)}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="quick-actions">
-                <h2>Quick Actions</h2>
-                <div className="actions-grid">
-                    <button onClick={() => navigate('/expense-form')} className="action-card">
-                        <FaPlus />
-                        <span>Add Expense</span>
-                    </button>
-                    <button onClick={() => navigate('/expenses')} className="action-card">
-                        <FaMoneyBillWave />
-                        <span>View Expenses</span>
-                    </button>
-                    <button onClick={() => navigate('/contributions')} className="action-card">
-                        <FaChartBar />
-                        <span>Contributions</span>
-                    </button>
-                    <button onClick={() => navigate('/settlement-history')} className="action-card">
-                        <FaHistory />
-                        <span>Settlements</span>
-                    </button>
-                    <button onClick={() => navigate('/users')} className="action-card">
-                        <FaUsers />
-                        <span>Manage Users</span>
-                    </button>
-                    <button onClick={() => navigate('/settings')} className="action-card">
-                        <FaCog />
-                        <span>Settings</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="recent-activity">
-                <div className="activity-grid">
-                    {/* Recent Expenses */}
-                    <div className="recent-expenses">
-                        <div className="section-header">
-                            <h2>Recent Expenses</h2>
-                            <button onClick={() => navigate('/expenses')} className="view-all-btn">
-                                View All
-                            </button>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <motion.div {...sectionMotion}>
+                <Card>
+                    <CardContent>
+                        <div className="flex items-center gap-4 pt-6">
+                            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/10 sm:h-20 sm:w-20">
+                                {photoBase64 ? (
+                                    <img
+                                        src={photoBase64}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                                        <User className="h-8 w-8 sm:h-9 sm:w-9" strokeWidth={1.5} />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="min-w-0">
+                                <CardTitle className="text-xl sm:text-2xl">
+                                    Welcome back, {user?.displayName || 'User'}
+                                </CardTitle>
+                                <CardDescription>Track your spending with clarity and confidence.</CardDescription>
+                            </div>
                         </div>
 
+                        <div className="mt-6">
+                            <div className="mb-2 inline-flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4" aria-hidden="true" />
+                                <span>This Month&apos;s Personal Expenses</span>
+                            </div>
+                            <p className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+                                £{monthlyTotal.toFixed(2)}
+                            </p>
+                        </div>
+
+                        <div className="mt-6">
+                            <Button
+                                type="button"
+                                onClick={() => navigate('/expense-form')}
+                                className="w-full justify-between sm:w-auto sm:justify-center"
+                            >
+                                <span className="inline-flex items-center gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    New Transaction
+                                </span>
+                                <ArrowUpRight className="h-4 w-4 opacity-80 sm:ml-1" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            <motion.div {...sectionMotion} transition={{ duration: 0.4, delay: 0.05 }}>
+                <Card>
+                    <CardHeader className="pb-0">
+                        <div className="flex items-center justify-between gap-3">
+                            <CardTitle>Recent Expenses</CardTitle>
+                            <Button type="button" variant="secondary" className="w-auto shrink-0" onClick={() => navigate('/expenses')}>
+                                View All
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-0 pt-2">
                         {recentExpenses.length === 0 ? (
-                            <div className="no-expenses">
-                                <FaMoneyBillWave />
-                                <p>No expenses yet. Add your first expense to get started!</p>
-                                <button onClick={() => navigate('/expense-form')} className="btn btn-primary">
-                                    <FaPlus /> Add First Expense
-                                </button>
+                            <div className="p-4">
+                                <div className="rounded-lg border border-dashed p-5 text-center">
+                                    <p className="mb-2 font-semibold">Your timeline is ready</p>
+                                    <p className="mb-4 text-sm text-muted-foreground">
+                                        Add your first transaction to start building a clean spending history.
+                                    </p>
+                                    <Button type="button" onClick={() => navigate('/expense-form')}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add your first expense
+                                    </Button>
+                                </div>
                             </div>
                         ) : (
-                            <div className="expenses-list">
-                                {recentExpenses.map(expense => (
-                                    <div key={expense.id} className="expense-item">
-                                        <div className="expense-info">
-                                            <h3>{expense.description}</h3>
-                                            <div className="expense-details">
-                                                <span className="expense-person">
-                                                    <FaUser /> {expense.person}
-                                                </span>
-                                                <span className="expense-date">
-                                                    {formatDate(expense.date)}
-                                                </span>
-                                                <span className="expense-payment">
-                                                    {getPaymentModeIcon(expense.paymentMode)} {expense.paymentMode}
-                                                </span>
+                            <ul role="list">
+                                {recentExpenses.map((expense) => (
+                                    <li key={expense.id}>
+                                        <div className="flex items-center justify-between border-b p-4 last:border-0">
+                                            <div className="min-w-0 flex-1 pr-3">
+                                                <p className="font-semibold text-foreground">{expense.description}</p>
+                                                <div className="mt-1 flex flex-wrap gap-2">
+                                                    <Badge variant="secondary" className="font-normal">
+                                                        {formatDate(expense.date)}
+                                                    </Badge>
+                                                    <Badge variant="outline" className="font-normal">
+                                                        {categoryLabel(expense)}
+                                                    </Badge>
+                                                </div>
                                             </div>
+                                            <p className="shrink-0 text-base font-bold tabular-nums">
+                                                £{expense.amount.toFixed(2)}
+                                            </p>
                                         </div>
-                                        <div className="expense-amount">
-                                            £{expense.amount.toFixed(2)}
-                                        </div>
-                                    </div>
+                                    </li>
                                 ))}
-                            </div>
+                            </ul>
                         )}
-                    </div>
-
-                    {/* Recent Settlements */}
-                    <div className="recent-settlements">
-                        <div className="section-header">
-                            <h2>Recent Settlements</h2>
-                            <button onClick={() => navigate('/settlement-history')} className="view-all-btn">
-                                View All
-                            </button>
-                        </div>
-
-                        {recentSettlements.length === 0 ? (
-                            <div className="no-settlements">
-                                <FaHistory />
-                                <p>No settlements recorded yet.</p>
-                                <button onClick={() => navigate('/contributions')} className="btn btn-primary">
-                                    <FaCheckCircle /> Go to Contributions
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="settlements-list">
-                                {recentSettlements.map(settlement => (
-                                    <div key={settlement.id} className="settlement-item">
-                                        <div className="settlement-info">
-                                            <div className="settlement-users">
-                                                <span className="from-user">{settlement.fromUser}</span>
-                                                <span className="arrow">→</span>
-                                                <span className="to-user">{settlement.toUser}</span>
-                                            </div>
-                                            <div className="settlement-details">
-                                                <span className="settlement-description">
-                                                    {settlement.description}
-                                                </span>
-                                                <span className="settlement-date">
-                                                    {formatDate(settlement.date)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="settlement-amount">
-                                            £{settlement.amount.toFixed(2)}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
         </div>
     );
-} 
+}

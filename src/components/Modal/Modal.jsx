@@ -1,5 +1,13 @@
 import React from 'react';
-import './Modal.css';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function Modal({
     isOpen,
@@ -12,51 +20,60 @@ export default function Modal({
     showCancel = true,
     customContent,
     isConfirming = false,
-    isConfirmDisabled = false
+    isConfirmDisabled = false,
+    destructive = false
 }) {
-    if (!isOpen) return null;
-
-    const handleOverlayClick = () => {
-        if (!isConfirming) {
+    const handleOpenChange = (open) => {
+        if (!open) {
+            if (isConfirming) return;
             onCancel();
         }
     };
 
     return (
-        <div className="modal-overlay" onClick={handleOverlayClick}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h3>{title}</h3>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            <DialogContent
+                className="sm:max-w-md"
+                onPointerDownOutside={(e) => {
+                    if (isConfirming) e.preventDefault();
+                }}
+                onEscapeKeyDown={(e) => {
+                    if (isConfirming) e.preventDefault();
+                }}
+            >
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                </DialogHeader>
+                <div className="max-h-[min(60vh,360px)] overflow-y-auto text-sm text-muted-foreground">
+                    {customContent ? customContent : <p className="text-foreground">{message}</p>}
                 </div>
-                <div className="modal-body">
-                    {customContent ? customContent : <p>{message}</p>}
-                </div>
-                <div className="modal-footer">
+                <DialogFooter>
                     {showCancel && (
-                        <button
-                            className="btn btn-secondary"
-                            onClick={onCancel}
-                            disabled={isConfirming}
-                        >
+                        <Button type="button" variant="outline" onClick={onCancel} disabled={isConfirming}>
                             {cancelText}
-                        </button>
+                        </Button>
                     )}
-                    <button
-                        className="btn btn-primary"
+                    <Button
+                        type="button"
+                        variant={destructive ? 'destructive' : 'default'}
                         onClick={onConfirm}
                         disabled={isConfirming || isConfirmDisabled}
+                        className={cn(!destructive && 'min-w-[7rem]')}
                     >
                         {isConfirming ? (
-                            <>
-                                <div className="modal-spinner"></div>
+                            <span className="inline-flex items-center gap-2">
+                                <span
+                                    className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent opacity-80"
+                                    aria-hidden="true"
+                                />
                                 {confirmText}
-                            </>
+                            </span>
                         ) : (
                             confirmText
                         )}
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
-} 
+}

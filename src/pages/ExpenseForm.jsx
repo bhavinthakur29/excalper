@@ -1,68 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { FaArrowLeft, FaSave, FaUser, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa';
+import { ArrowLeft, Save, Calendar } from 'lucide-react';
 import { toast } from 'react-toastify';
-import './ExpenseForm.css';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const selectClassName =
+    'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export default function ExpenseForm() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
-    const [person, setPerson] = useState('');
-    const [paymentMode, setPaymentMode] = useState('');
-    const [people, setPeople] = useState([]);
+    const [category, setCategory] = useState('contactless');
+    const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA'));
     const [loading, setLoading] = useState(false);
-    const [totalExpense, setTotalExpense] = useState(0);
-
-    useEffect(() => {
-        if (user) {
-            fetchPeople();
-        }
-    }, [user]);
-
-    useEffect(() => {
-        if (person && user) {
-            fetchTotalExpense();
-        }
-    }, [person, user]);
-
-    const fetchPeople = async () => {
-        try {
-            const peopleRef = collection(db, 'users', user.uid, 'people');
-            const peopleSnapshot = await getDocs(peopleRef);
-            const peopleList = peopleSnapshot.docs.map(doc => doc.data().name);
-            setPeople(peopleList.sort());
-            if (peopleList.length === 0) {
-                setPerson(user.uid);
-            }
-        } catch (error) {
-            toast.error('Error fetching people list');
-        }
-    };
-
-    const fetchTotalExpense = async () => {
-        try {
-            const expensesRef = collection(db, 'users', user.uid, 'expenses');
-            const expensesSnapshot = await getDocs(expensesRef);
-            const userExpenses = expensesSnapshot.docs
-                .map(doc => doc.data())
-                .filter(exp => exp.person === person);
-            const total = userExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-            setTotalExpense(total);
-        } catch (error) {
-            toast.error('Error fetching total expense');
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
-        if (!description || !amount || isNaN(Number(amount)) || Number(amount) <= 0 || !person || !paymentMode) {
+        if (!description || !amount || isNaN(Number(amount)) || Number(amount) <= 0 || !category || !date) {
             toast.error('Please provide all required fields');
             setLoading(false);
             return;
@@ -72,9 +36,8 @@ export default function ExpenseForm() {
             await addDoc(collection(db, 'users', user.uid, 'expenses'), {
                 description,
                 amount: parseFloat(amount),
-                person,
-                paymentMode,
-                timestamp: serverTimestamp(),
+                category,
+                timestamp: Timestamp.fromDate(new Date(`${date}T00:00:00`)),
             });
 
             toast.success('Expense added successfully!');
@@ -87,87 +50,82 @@ export default function ExpenseForm() {
     };
 
     return (
-        <div className="expense-form-container">
-            <div className="expense-form-header">
-                <button onClick={() => navigate(-1)} className="back-btn">
-                    <FaArrowLeft /> Back
-                </button>
-                <h1>Add New Expense</h1>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col gap-2">
+                <Button type="button" variant="ghost" className="w-fit gap-2 px-0" onClick={() => navigate(-1)}>
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                </Button>
+                <h1 className="text-3xl font-bold tracking-tight">Add new expense</h1>
+                <p className="text-sm text-muted-foreground">Log a personal transaction to keep your totals accurate.</p>
             </div>
-            <div className="expense-form-card">
-                <form onSubmit={handleSubmit} className="expense-form">
-                    <div className="form-group">
-                        <label htmlFor="description">Description</label>
-                        <input
-                            type="text"
-                            id="description"
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                            placeholder="Enter expense description"
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="amount">Amount (£)</label>
-                        <input
-                            type="number"
-                            id="amount"
-                            value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                            placeholder="0.00"
-                            required
-                            min="0"
-                            step="0.01"
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="person">Person</label>
-                        {people.length > 0 ? (
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Details</CardTitle>
+                    <CardDescription>Amount, category, and date are required.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Input
+                                id="description"
+                                type="text"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="e.g. Groceries, train ticket"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="amount">Amount (£)</Label>
+                            <Input
+                                id="amount"
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                placeholder="0.00"
+                                required
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
                             <select
-                                id="person"
-                                value={person}
-                                onChange={e => setPerson(e.target.value)}
+                                id="category"
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className={selectClassName}
                                 required
                             >
-                                <option value="">Select a person</option>
-                                {people.map((p, index) => (
-                                    <option key={index} value={p}>
-                                        {p}
-                                    </option>
-                                ))}
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="contactless">Contactless</option>
+                                <option value="net banking">Net banking</option>
                             </select>
-                        ) : (
-                            <div className="input-disabled">
-                                <FaUser />
-                                <span>Self</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="paymentMode">Payment Mode</label>
-                        <select
-                            id="paymentMode"
-                            value={paymentMode}
-                            onChange={e => setPaymentMode(e.target.value)}
-                            required
-                        >
-                            <option value="">Select payment mode</option>
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="contactless">Contactless</option>
-                            <option value="net banking">Net Banking</option>
-                        </select>
-                    </div>
-                    {person && (
-                        <div className="total-expense-info">
-                            <p>Total expense for {person}: £{totalExpense.toFixed(2)}</p>
                         </div>
-                    )}
-                    <button type="submit" className="btn btn-primary submit-btn" disabled={loading}>
-                        <FaSave /> {loading ? 'Adding...' : 'Add Expense'}
-                    </button>
-                </form>
-            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="date" className="inline-flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                                Date
+                            </Label>
+                            <Input
+                                id="date"
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            <Save className="h-4 w-4" />
+                            {loading ? 'Adding…' : 'Add expense'}
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
-} 
+}
