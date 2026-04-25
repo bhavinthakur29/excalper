@@ -15,6 +15,7 @@ import {
     Database,
     MapPin,
     Search,
+    Download,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
@@ -34,6 +35,8 @@ export default function Settings() {
     const [savingCurrency, setSavingCurrency] = useState(false);
     const [currencyOpen, setCurrencyOpen] = useState(false);
     const [currencySearch, setCurrencySearch] = useState('');
+    const [installPrompt, setInstallPrompt] = useState(null);
+    const [isAppInstalled, setIsAppInstalled] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -76,6 +79,30 @@ export default function Settings() {
             fetchPhoto();
         }
     }, [user]);
+
+    useEffect(() => {
+        const isStandalone =
+            window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        setIsAppInstalled(isStandalone);
+
+        const handleBeforeInstallPrompt = (event) => {
+            event.preventDefault();
+            setInstallPrompt(event);
+        };
+        const handleAppInstalled = () => {
+            setInstallPrompt(null);
+            setIsAppInstalled(true);
+            toast.success('Excalper installed successfully');
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
+        };
+    }, []);
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
@@ -196,6 +223,23 @@ export default function Settings() {
             toast.error('Failed to detect currency preference');
         } finally {
             setSavingCurrency(false);
+        }
+    };
+
+    const handleInstallApp = async () => {
+        if (!installPrompt) {
+            toast.info('Install is available from your browser menu if this device supports it.');
+            return;
+        }
+
+        installPrompt.prompt();
+        const choiceResult = await installPrompt.userChoice;
+        setInstallPrompt(null);
+
+        if (choiceResult.outcome === 'accepted') {
+            toast.success('Installing Excalper...');
+        } else {
+            toast.info('Install cancelled');
         }
     };
 
@@ -445,6 +489,30 @@ export default function Settings() {
                     {savingCurrency && (
                         <p className="text-xs text-muted-foreground">Saving preference…</p>
                     )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-xl">Install Excalper</CardTitle>
+                    <CardDescription>
+                        Add Excalper to your home screen for faster launches and offline access.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleInstallApp}
+                        disabled={isAppInstalled}
+                        className="w-full sm:w-auto"
+                    >
+                        <Download className="h-4 w-4" />
+                        {isAppInstalled ? 'App Installed' : 'Install App'}
+                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                        Offline mode keeps your app shell ready and Firestore syncs queued transactions when you reconnect.
+                    </p>
                 </CardContent>
             </Card>
 
