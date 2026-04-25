@@ -19,6 +19,11 @@ import {
     DownloadCloud,
     ShieldCheck,
     Smartphone,
+    Monitor,
+    Apple,
+    Shield,
+    ChevronDown,
+    ChevronUp,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
@@ -41,6 +46,7 @@ export default function Settings() {
     const [currencySearch, setCurrencySearch] = useState('');
     const [installPrompt, setInstallPrompt] = useState(null);
     const [isAppInstalled, setIsAppInstalled] = useState(false);
+    const [openSettingsSection, setOpenSettingsSection] = useState('web');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -53,7 +59,6 @@ export default function Settings() {
     const [backfillingTimestamps, setBackfillingTimestamps] = useState(false);
     const [uploading, setUploading] = useState(false);
     const photoInputRef = useRef(null);
-    const isAndroid = /Android/i.test(navigator.userAgent);
     const selectedCurrency = getCurrencyDef(currency);
     const filteredCurrencies = useMemo(() => {
         const query = currencySearch.trim().toLowerCase();
@@ -319,49 +324,150 @@ export default function Settings() {
         reader.readAsDataURL(file);
     };
 
-    const androidAppCard = (
-        <Card className="border-primary/30 bg-primary/5">
-            <CardHeader>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1.5">
-                        <CardTitle className="flex items-center gap-2 text-xl">
-                            <Smartphone className="h-5 w-5 text-primary" aria-hidden="true" />
-                            Excalper for Android
-                            <Badge className="animate-pulse">New</Badge>
-                        </CardTitle>
-                        <CardDescription>
-                            Download the official APK for a native experience with enhanced performance.
-                        </CardDescription>
+    const renderSettingsAccordionSection = ({ id, title, description, Icon, badge, disabled = false, children }) => {
+        const isOpen = openSettingsSection === id;
+
+        return (
+            <Card
+                key={id}
+                className={`overflow-hidden transition-colors duration-300 ${isOpen ? 'border-primary/40 bg-primary/5' : ''
+                    } ${disabled ? 'opacity-55' : ''}`}
+            >
+                <button
+                    type="button"
+                    disabled={disabled}
+                    aria-expanded={isOpen}
+                    aria-controls={`${id}-settings-panel`}
+                    onClick={() => setOpenSettingsSection(isOpen ? '' : id)}
+                    className={`flex w-full items-start justify-between gap-4 p-5 text-left transition-colors duration-200 sm:p-6 ${disabled
+                            ? 'cursor-not-allowed'
+                            : 'cursor-pointer hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                        }`}
+                >
+                    <div className="flex min-w-0 gap-3">
+                        <Icon className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" aria-hidden="true" />
+                        <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
+                                {badge}
+                            </div>
+                            <CardDescription className="text-sm">{description}</CardDescription>
+                        </div>
                     </div>
-                    <Badge variant="secondary" className="w-fit gap-1.5">
-                        <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                        Verified
-                    </Badge>
+                    <span className="mt-1 shrink-0 text-muted-foreground">
+                        {isOpen ? (
+                            <ChevronUp className="h-5 w-5" aria-hidden="true" />
+                        ) : (
+                            <ChevronDown className="h-5 w-5" aria-hidden="true" />
+                        )}
+                    </span>
+                </button>
+                <div
+                    id={`${id}-settings-panel`}
+                    aria-hidden={!isOpen}
+                    inert={!isOpen}
+                    className="grid transition-all duration-300 ease-in-out"
+                    style={{ gridTemplateRows: isOpen ? '1fr' : '0fr', opacity: isOpen ? 1 : 0 }}
+                >
+                    <div className="overflow-hidden">
+                        <CardContent className="border-t px-5 py-5 sm:px-6">{children}</CardContent>
+                    </div>
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <Button asChild className="w-full shadow-primary/20 sm:w-auto">
-                        <a href="/excalperv1.apk" download>
-                            <DownloadCloud className="h-4 w-4" />
-                            Download APK
-                        </a>
+            </Card>
+        );
+    };
+
+    const settingsAccordionSections = [
+        {
+            id: 'web',
+            title: 'Install Excalper (PWA)',
+            description: 'Add Excalper to your home screen for faster launches and offline access.',
+            Icon: Monitor,
+            children: (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="max-w-md text-sm text-muted-foreground">
+                        Offline mode keeps your app ready-to-use even without internet and syncs queued transactions to database when you reconnect.
+                    </p>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleInstallApp}
+                        disabled={isAppInstalled}
+                        className="w-full sm:w-auto"
+                    >
+                        <Download className="h-4 w-4" />
+                        {isAppInstalled ? 'App Installed' : 'Install App'}
                     </Button>
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                        <span>excalperv1.apk</span>
-                        <Badge variant="outline" className="gap-1.5">
-                            <ShieldCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                </div>
+            ),
+        },
+        {
+            id: 'android',
+            title: 'Excalper for Android',
+            description: 'Download the official APK for a native experience with enhanced performance.',
+            Icon: Smartphone,
+            badge: <Badge className="animate-pulse">New</Badge>,
+            children: (
+                <div className="space-y-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <Button asChild className="w-full shadow-primary/20 sm:w-auto">
+                                <a href="/excalper.apk" download>
+                                    <DownloadCloud className="h-4 w-4" />
+                                    Download APK
+                                </a>
+                            </Button>
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                                <span>excalper.apk</span>
+                                <Badge variant="outline" className="gap-1.5">
+                                    <ShieldCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                                    Verified
+                                </Badge>
+                            </div>
+                        </div>
+                        <Badge variant="secondary" className="w-fit gap-1.5">
+                            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             Verified
                         </Badge>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                        Note: You may need to enable &apos;Install from Unknown Sources&apos; in your Android settings to
+                        complete the installation.
+                    </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                    Note: You may need to enable &apos;Install from Unknown Sources&apos; in your Android settings to
-                    complete the installation.
-                </p>
-            </CardContent>
-        </Card>
-    );
+            ),
+        },
+        {
+            id: 'ios',
+            title: 'Excalper for iOS',
+            description: 'iPhone and iPad support is planned for a future release.',
+            Icon: Apple,
+            badge: (
+                <Badge variant="secondary" className="bg-gray-200 text-gray-600 hover:bg-gray-200">
+                    Coming Soon
+                </Badge>
+            ),
+            disabled: true,
+            children: null,
+        },
+        {
+            id: 'security',
+            title: 'Security',
+            description: 'Change the password for your account.',
+            Icon: Shield,
+            children: (
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowPasswordModal(true)}
+                    className="w-full sm:w-auto"
+                >
+                    <Lock className="h-4 w-4" />
+                    Change password
+                </Button>
+            ),
+        },
+    ];
 
     if (!user) {
         return (
@@ -541,49 +647,9 @@ export default function Settings() {
                 </CardContent>
             </Card>
 
-            {isAndroid && androidAppCard}
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-xl">Install Excalper</CardTitle>
-                    <CardDescription>
-                        Add Excalper to your home screen for faster launches and offline access.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={handleInstallApp}
-                        disabled={isAppInstalled}
-                        className="w-full sm:w-auto"
-                    >
-                        <Download className="h-4 w-4" />
-                        {isAppInstalled ? 'App Installed' : 'Install App'}
-                    </Button>
-                    <p className="text-sm text-muted-foreground">
-                        Offline mode keeps your app shell ready and Firestore syncs queued transactions when you reconnect.
-                    </p>
-                </CardContent>
-            </Card>
-
-            {!isAndroid && androidAppCard}
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                        <Lock className="h-5 w-5" aria-hidden="true" />
-                        Security
-                    </CardTitle>
-                    <CardDescription>Change the password for your account.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button type="button" variant="outline" onClick={() => setShowPasswordModal(true)}>
-                        <Lock className="h-4 w-4" />
-                        Change password
-                    </Button>
-                </CardContent>
-            </Card>
+            <div className="space-y-3">
+                {settingsAccordionSections.map((section) => renderSettingsAccordionSection(section))}
+            </div>
 
             <Card>
                 <CardHeader>
