@@ -1,5 +1,6 @@
 /** Category id is persisted on expense documents in Firestore (`category` field). */
 export const CATEGORIES = [
+    { id: 'income', label: 'Salary/Income', icon: 'HandCoins', color: 'bg-emerald-100 text-emerald-700' },
     { id: 'grocery', label: 'Grocery', icon: 'ShoppingBasket', color: 'bg-green-100 text-green-700' },
     { id: 'travel', label: 'Travel', icon: 'Plane', color: 'bg-blue-100 text-blue-700' },
     { id: 'bills', label: 'Bills', icon: 'FileText', color: 'bg-red-100 text-red-700' },
@@ -8,6 +9,7 @@ export const CATEGORIES = [
 ];
 
 export const DEFAULT_CATEGORY_ID = 'other';
+export const INCOME_CATEGORY_ID = 'income';
 
 export function getCategoryDef(categoryRef) {
     if (!categoryRef) {
@@ -28,4 +30,9 @@ export function resolveCategoryId(raw) {
 
 export function getCategoryDisplayLabel(categoryRef) {
     return getCategoryDef(categoryRef).label;
+}
+
+/** Legacy Firestore documents did not have a type, so they are treated as expenses. */
+export function getTransactionType(transaction) {
+    return transaction?.type === 'income' ? 'income' : 'expense';
 }

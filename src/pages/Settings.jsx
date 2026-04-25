@@ -46,11 +46,14 @@ export default function Settings() {
                 try {
                     const userRef = doc(db, 'users', user.uid);
                     const userSnap = await getDoc(userRef);
-                    if (userSnap.exists() && userSnap.data().photoBase64) {
-                        setPhotoBase64(userSnap.data().photoBase64);
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        if (userData.photoBase64) {
+                            setPhotoBase64(userData.photoBase64);
+                        }
                     }
                 } catch (err) {
-                    console.error('Failed to fetch avatar from Firestore:', err);
+                    console.error('Failed to fetch settings from Firestore:', err);
                 }
             };
             fetchPhoto();
@@ -73,7 +76,7 @@ export default function Settings() {
                 try {
                     const userRef = doc(db, 'users', user.uid);
                     await updateDoc(userRef, updates);
-                } catch (error) {
+                } catch {
                     console.log('Firestore update failed, but auth update succeeded');
                 }
 
@@ -123,7 +126,7 @@ export default function Settings() {
             try {
                 const userRef = doc(db, 'users', user.uid);
                 await deleteDoc(userRef);
-            } catch (error) {
+            } catch {
                 console.log('Firestore deletion failed, but account deletion will proceed');
             }
 
@@ -143,7 +146,7 @@ export default function Settings() {
         try {
             await logout();
             toast.success('Logged out successfully');
-        } catch (error) {
+        } catch {
             toast.error('Failed to logout');
         }
     };
@@ -158,7 +161,7 @@ export default function Settings() {
             } else {
                 toast.success(`Backfilled timestamps in ${updatedCount} document(s).`);
             }
-        } catch (error) {
+        } catch {
             toast.error('Timestamp backfill failed. Please try again.');
         } finally {
             setBackfillingTimestamps(false);

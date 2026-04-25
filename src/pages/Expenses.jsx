@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 import { CategoryIcon } from '@/lib/categoryIcon';
-import { getCategoryDef, resolveCategoryId } from '@/lib/constants';
+import { getCategoryDef, getTransactionType, resolveCategoryId } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 const selectTriggerClass =
@@ -38,24 +38,17 @@ export default function Expenses() {
     const [expenseToDelete, setExpenseToDelete] = useState(null);
     const [monthlyExpenses, setMonthlyExpenses] = useState({});
     const [stats, setStats] = useState({
-        total: 0,
-        average: 0,
+        income: 0,
+        spent: 0,
+        balance: 0,
         count: 0
     });
     const [showEditModal, setShowEditModal] = useState(false);
     const [expenseToEdit, setExpenseToEdit] = useState(null);
 
-    useEffect(() => {
-        if (user) {
-            fetchExpenses();
-        }
-    }, [user]);
+    const fetchExpenses = useCallback(async () => {
+        if (!user) return;
 
-    useEffect(() => {
-        calculateStats();
-    }, [expenses, selectedMonth, selectedCategories]);
-
-    const fetchExpenses = async () => {
         try {
             const expensesRef = collection(db, 'users', user.uid, 'expenses');
             const q = query(expensesRef, orderBy('timestamp', 'desc'));
@@ -76,14 +69,14 @@ export default function Expenses() {
                 return acc;
             }, {});
             setMonthlyExpenses(grouped);
-        } catch (error) {
-            toast.error('Failed to fetch expenses');
+        } catch {
+            toast.error('Failed to fetch transactions');
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
 
-    const calculateStats = () => {
+    const calculateStats = useCallback(() => {
         let filteredExpenses = expenses;
 
         if (selectedMonth) {
@@ -100,24 +93,38 @@ export default function Expenses() {
             });
         }
 
-        const total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const income = filteredExpenses
+            .filter((exp) => getTransactionType(exp) === 'income')
+            .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+        const spent = filteredExpenses
+            .filter((exp) => getTransactionType(exp) === 'expense')
+            .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
         const count = filteredExpenses.length;
-        const average = count > 0 ? total / count : 0;
 
-        setStats({ total, average, count });
-    };
+        setStats({ income, spent, balance: income - spent, count });
+    }, [expenses, selectedCategories, selectedMonth]);
+
+    useEffect(() => {
+        if (user) {
+            fetchExpenses();
+        }
+    }, [fetchExpenses, user]);
+
+    useEffect(() => {
+        calculateStats();
+    }, [calculateStats]);
 
     const deleteExpense = async () => {
         if (!expenseToDelete) return;
 
         try {
             await deleteDoc(doc(db, 'users', user.uid, 'expenses', expenseToDelete.id));
-            toast.success('Expense deleted successfully');
+            toast.success('Transaction deleted successfully');
             setShowDeleteModal(false);
             setExpenseToDelete(null);
             fetchExpenses();
-        } catch (error) {
-            toast.error('Failed to delete expense');
+        } catch {
+            toast.error('Failed to delete transaction');
         }
     };
 
@@ -164,7 +171,7 @@ export default function Expenses() {
         return (
             <div className="space-y-6 animate-in fade-in duration-500">
                 <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
-                    Loading expenses…
+                    Loading transactions…
                 </div>
             </div>
         );
@@ -176,33 +183,44 @@ export default function Expenses() {
                 <div>
                     <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight">
                         <Wallet className="h-8 w-8 text-primary" aria-hidden="true" />
-                        Expenses
+                        Transactions
                     </h1>
-                    <p className="mt-1 text-sm text-muted-foreground">Review and manage your personal spending.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Review and manage money in and money out.</p>
                 </div>
                 <Button type="button" onClick={() => navigate('/expense-form')} className="w-full sm:w-auto">
                     <Plus className="h-4 w-4" />
-                    Add expense
+                    Add transaction
                 </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardDescription>Total</CardDescription>
-                        <CardTitle className="text-2xl tabular-nums">£{stats.total.toFixed(2)}</CardTitle>
+                        <CardDescription>Total Income</CardDescription>
+                        <CardTitle className="text-2xl tabular-nums text-emerald-600">
+                            +£{stats.income.toFixed(2)}
+                        </CardTitle>
                     </CardHeader>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardDescription>Average</CardDescription>
-                        <CardTitle className="text-2xl tabular-nums">£{stats.average.toFixed(2)}</CardTitle>
+                        <CardDescription>Total Spent</CardDescription>
+                        <CardTitle className="text-2xl tabular-nums text-rose-600">
+                            -£{stats.spent.toFixed(2)}
+                        </CardTitle>
                     </CardHeader>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardDescription>Count</CardDescription>
-                        <CardTitle className="text-2xl tabular-nums">{stats.count}</CardTitle>
+                        <CardDescription>Net Balance</CardDescription>
+                        <CardTitle
+                            className={cn(
+                                'text-2xl tabular-nums',
+                                stats.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                            )}
+                        >
+                            {stats.balance >= 0 ? '+' : '-'}£{Math.abs(stats.balance).toFixed(2)}
+                        </CardTitle>
                     </CardHeader>
                 </Card>
             </div>
@@ -213,7 +231,7 @@ export default function Expenses() {
                         <Filter className="h-5 w-5" aria-hidden="true" />
                         Filters
                     </CardTitle>
-                    <CardDescription>Refine the list by month.</CardDescription>
+                        <CardDescription>Refine the list by month and category.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-2">
@@ -238,7 +256,7 @@ export default function Expenses() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <BarChart3 className="h-5 w-5 shrink-0" aria-hidden="true" />
-                            <span>All expenses ({filtered.length})</span>
+                            <span>All transactions ({filtered.length})</span>
                         </CardTitle>
                         <CategoryFilterMenu
                             selectedCategories={selectedCategories}
@@ -250,10 +268,10 @@ export default function Expenses() {
                     {expenses.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 p-8 text-center text-muted-foreground">
                             <Wallet className="h-10 w-10 opacity-40" />
-                            <p className="text-sm">No expenses found. Add your first expense to get started.</p>
+                            <p className="text-sm">No transactions found. Add your first transaction to get started.</p>
                             <Button type="button" variant="secondary" onClick={() => navigate('/expense-form')}>
                                 <Plus className="h-4 w-4" />
-                                Add expense
+                                Add transaction
                             </Button>
                         </div>
                     ) : (
@@ -264,80 +282,89 @@ export default function Expenses() {
                                     <p className="text-sm">
                                         {selectedCategories.length > 0
                                             ? 'No transactions found in this category.'
-                                            : 'No expenses match your filters.'}
+                                            : 'No transactions match your filters.'}
                                     </p>
                                 </div>
                             ) : (
-                                <motion.ul layout className="list-none" role="list">
+                                <Motion.ul layout className="list-none" role="list">
                                     <AnimatePresence mode="popLayout" initial={false}>
-                                        {filtered.map((expense) => (
-                                            <motion.li
-                                                key={expense.id}
-                                                layout
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                transition={{ duration: 0.22 }}
-                                            >
-                                                <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
-                                                    <div className="flex min-w-0 flex-1 items-center gap-4">
-                                                        <div
-                                                            className={cn(
-                                                                'flex shrink-0 rounded-full p-2',
-                                                                getCategoryDef(expense.category ?? expense.paymentMode)
-                                                                    .color
-                                                            )}
-                                                        >
-                                                            <CategoryIcon
-                                                                categoryRef={
-                                                                    expense.category ?? expense.paymentMode
-                                                                }
-                                                                size={18}
-                                                            />
+                                        {filtered.map((expense) => {
+                                            const transactionType = getTransactionType(expense);
+                                            const amountPrefix = transactionType === 'income' ? '+' : '-';
+                                            return (
+                                                <Motion.li
+                                                    key={expense.id}
+                                                    layout
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -10 }}
+                                                    transition={{ duration: 0.22 }}
+                                                >
+                                                    <div className="flex items-center justify-between gap-3 border-b p-4 last:border-0">
+                                                        <div className="flex min-w-0 flex-1 items-center gap-4">
+                                                            <div
+                                                                className={cn(
+                                                                    'flex shrink-0 rounded-full p-2',
+                                                                    getCategoryDef(expense.category ?? expense.paymentMode)
+                                                                        .color
+                                                                )}
+                                                            >
+                                                                <CategoryIcon
+                                                                    categoryRef={
+                                                                        expense.category ?? expense.paymentMode
+                                                                    }
+                                                                    size={18}
+                                                                />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="font-semibold text-foreground">
+                                                                    {expense.description}
+                                                                </p>
+                                                                <p className="mt-0.5 text-sm text-muted-foreground">
+                                                                    {formatDate(expense.date)}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="font-semibold text-foreground">
-                                                                {expense.description}
-                                                            </p>
-                                                            <p className="mt-0.5 text-sm text-muted-foreground">
-                                                                {formatDate(expense.date)}
-                                                            </p>
+                                                        <div className="flex shrink-0 items-center gap-3">
+                                                            <span
+                                                                className={cn(
+                                                                    'text-base font-bold tabular-nums',
+                                                                    transactionType === 'income' ? 'text-emerald-600' : 'text-rose-600'
+                                                                )}
+                                                            >
+                                                                {amountPrefix}£{expense.amount.toFixed(2)}
+                                                            </span>
+                                                            <Button
+                                                                type="button"
+                                                                size="icon"
+                                                                variant="outline"
+                                                                title="Edit transaction"
+                                                                onClick={() => {
+                                                                    setExpenseToEdit(expense);
+                                                                    setShowEditModal(true);
+                                                                }}
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                size="icon"
+                                                                variant="destructive"
+                                                                title="Delete transaction"
+                                                                onClick={() => {
+                                                                    setExpenseToDelete(expense);
+                                                                    setShowDeleteModal(true);
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
                                                         </div>
                                                     </div>
-                                                    <div className="flex shrink-0 items-center gap-3">
-                                                        <span className="text-base font-bold tabular-nums text-foreground">
-                                                            £{expense.amount.toFixed(2)}
-                                                        </span>
-                                                        <Button
-                                                            type="button"
-                                                            size="icon"
-                                                            variant="outline"
-                                                            title="Edit expense"
-                                                            onClick={() => {
-                                                                setExpenseToEdit(expense);
-                                                                setShowEditModal(true);
-                                                            }}
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            size="icon"
-                                                            variant="destructive"
-                                                            title="Delete expense"
-                                                            onClick={() => {
-                                                                setExpenseToDelete(expense);
-                                                                setShowDeleteModal(true);
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </motion.li>
-                                        ))}
+                                                </Motion.li>
+                                            );
+                                        })}
                                     </AnimatePresence>
-                                </motion.ul>
+                                </Motion.ul>
                             )}
                         </>
                     )}
@@ -346,7 +373,7 @@ export default function Expenses() {
 
             <Modal
                 isOpen={showDeleteModal}
-                title="Delete Expense"
+                title="Delete Transaction"
                 message={`Are you sure you want to delete "${expenseToDelete?.description}" (£${expenseToDelete?.amount.toFixed(2)})?`}
                 onConfirm={deleteExpense}
                 onCancel={() => {

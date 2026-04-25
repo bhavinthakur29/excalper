@@ -19,9 +19,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { CATEGORIES, DEFAULT_CATEGORY_ID, resolveCategoryId } from '@/lib/constants';
+import { CATEGORIES, DEFAULT_CATEGORY_ID, INCOME_CATEGORY_ID, getTransactionType, resolveCategoryId } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
+    const [transactionType, setTransactionType] = useState('expense');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState(DEFAULT_CATEGORY_ID);
@@ -30,10 +32,12 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
 
     useEffect(() => {
         if (expense) {
+            const type = getTransactionType(expense);
+            setTransactionType(type);
             setDescription(expense.description || '');
             setAmount(String(expense.amount ?? ''));
             const raw = expense.category ?? expense.paymentMode ?? '';
-            setCategory(resolveCategoryId(raw));
+            setCategory(type === 'income' ? INCOME_CATEGORY_ID : resolveCategoryId(raw));
             setDate(expense.date ? new Date(expense.date).toISOString().slice(0, 10) : '');
         }
     }, [expense]);
@@ -46,7 +50,8 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
         e.preventDefault();
         setLoading(true);
         try {
-            if (!description || !amount || !category || !date) {
+            const selectedCategory = transactionType === 'income' ? INCOME_CATEGORY_ID : category;
+            if (!description || !amount || !selectedCategory || !date) {
                 toast.error('All fields are required and must be valid.');
                 setLoading(false);
                 return;
@@ -67,13 +72,14 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
             await updateDoc(doc(db, 'users', expense.userId, 'expenses', expense.id), {
                 description,
                 amount: parseFloat(amount),
-                category,
+                type: transactionType,
+                category: selectedCategory,
                 timestamp: Timestamp.fromDate(new Date(`${date}T00:00:00`)),
             });
 
             if (onSave) onSave();
             onClose();
-            toast.success('Expense updated successfully!');
+            toast.success('Transaction updated successfully!');
         } catch (error) {
             console.error('Failed to update expense:', error);
             toast.error('Failed to update expense. ' + (error?.message || ''));
@@ -87,9 +93,34 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <DialogHeader>
-                        <DialogTitle>Edit expense</DialogTitle>
+                        <DialogTitle>Edit transaction</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-1">
+                        <div className="space-y-2">
+                            <Label>Transaction type</Label>
+                            <div className="grid rounded-lg border bg-muted p-1 sm:grid-cols-2" role="tablist" aria-label="Transaction type">
+                                {[
+                                    { value: 'expense', label: 'Expense' },
+                                    { value: 'income', label: 'Income' },
+                                ].map((option) => (
+                                    <Button
+                                        key={option.value}
+                                        type="button"
+                                        variant="ghost"
+                                        role="tab"
+                                        aria-selected={transactionType === option.value}
+                                        onClick={() => setTransactionType(option.value)}
+                                        className={cn(
+                                            'min-h-11 touch-manipulation justify-center rounded-md shadow-none sm:min-h-9',
+                                            transactionType === option.value && 'bg-background text-foreground shadow-sm',
+                                            transactionType === option.value && option.value === 'income' && 'text-emerald-700'
+                                        )}
+                                    >
+                                        {option.label}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-expense-description">Description</Label>
                             <Input
@@ -112,25 +143,27 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-expense-category">Category</Label>
-                            <Select value={category} onValueChange={setCategory} required>
-                                <SelectTrigger
-                                    id="edit-expense-category"
-                                    className="min-h-12 w-full touch-manipulation sm:min-h-10"
-                                    aria-label="Expense category"
-                                >
-                                    <SelectValue placeholder="Choose category" />
-                                </SelectTrigger>
-                                <SelectContent position="popper" className="max-h-[min(24rem,70vh)]">
-                                    {CATEGORIES.map(({ id, label }) => (
-                                        <SelectItem key={id} value={id}>
-                                            {label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {transactionType === 'expense' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-expense-category">Category</Label>
+                                <Select value={category} onValueChange={setCategory} required>
+                                    <SelectTrigger
+                                        id="edit-expense-category"
+                                        className="min-h-12 w-full touch-manipulation sm:min-h-10"
+                                        aria-label="Expense category"
+                                    >
+                                        <SelectValue placeholder="Choose category" />
+                                    </SelectTrigger>
+                                    <SelectContent position="popper" className="max-h-[min(24rem,70vh)]">
+                                        {CATEGORIES.filter(({ id }) => id !== INCOME_CATEGORY_ID).map(({ id, label }) => (
+                                            <SelectItem key={id} value={id}>
+                                                {label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <Label htmlFor="edit-expense-date">Date</Label>
                             <Input
@@ -151,7 +184,11 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading}>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className={cn(transactionType === 'income' && 'bg-emerald-600 text-white hover:bg-emerald-700')}
+                        >
                             {loading ? 'Saving…' : 'Save changes'}
                         </Button>
                     </DialogFooter>
