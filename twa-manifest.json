@@ -17,8 +17,8 @@
   "maskableIconUrl": "https://excalper.netlify.app/logo.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
-    "path": "\"C:\\Users\\ASUS\\develop\\android-studio\\tektally-key\"",
-    "alias": "tektally"
+    "path": "C:\\Users\\ASUS\\Desktop\\dev\\Website\\excalper\\android.keystore",
+    "alias": "android"
   },
   "appVersionName": "1",
   "appVersionCode": 1,
