@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.excalper.twa",
+            "sha256_cert_fingerprints": [
+                "97:A5:A0:AB:33:49:E5:06:E1:8F:43:6F:75:D5:5D:79:68:AF:4D:34:40:9A:40:BB:9F:2E:4C:DA:F4:7D:E6:29"
+            ]
+        }
+    }
+]
