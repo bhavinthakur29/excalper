@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useAuth } from '../contexts/useAuth';
 import { updateProfile, updatePassword, deleteUser } from 'firebase/auth';
 import { doc, updateDoc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -13,6 +13,8 @@ import {
     Eye,
     EyeOff,
     Database,
+    MapPin,
+    Search,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
@@ -22,10 +24,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CURRENCIES } from '@/lib/constants';
+import { getCurrencyDef, getCurrencySymbol, getLocaleCurrency } from '@/lib/currency';
 
 export default function Settings() {
-    const { user, logout } = useAuth();
+    const { user, currency, updateCurrency, logout } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [savingCurrency, setSavingCurrency] = useState(false);
+    const [currencyOpen, setCurrencyOpen] = useState(false);
+    const [currencySearch, setCurrencySearch] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -38,6 +46,15 @@ export default function Settings() {
     const [backfillingTimestamps, setBackfillingTimestamps] = useState(false);
     const [uploading, setUploading] = useState(false);
     const photoInputRef = useRef(null);
+    const selectedCurrency = getCurrencyDef(currency);
+    const filteredCurrencies = useMemo(() => {
+        const query = currencySearch.trim().toLowerCase();
+        if (!query) return CURRENCIES;
+
+        return CURRENCIES.filter((item) => {
+            return item.code.toLowerCase().includes(query) || item.label.toLowerCase().includes(query);
+        });
+    }, [currencySearch]);
 
     useEffect(() => {
         if (user) {
@@ -148,6 +165,37 @@ export default function Settings() {
             toast.success('Logged out successfully');
         } catch {
             toast.error('Failed to logout');
+        }
+    };
+
+    const handleCurrencyChange = async (currencyCode) => {
+        setSavingCurrency(true);
+        try {
+            await updateCurrency(currencyCode);
+            setCurrencyOpen(false);
+            setCurrencySearch('');
+            toast.success('Currency preference updated');
+        } catch (error) {
+            console.error('Currency update error:', error);
+            toast.error('Failed to update currency preference');
+        } finally {
+            setSavingCurrency(false);
+        }
+    };
+
+    const handleDetectCurrency = async () => {
+        const detectedCurrency = getLocaleCurrency();
+        setSavingCurrency(true);
+        try {
+            await updateCurrency(detectedCurrency);
+            setCurrencyOpen(false);
+            setCurrencySearch('');
+            toast.success(`Detected ${getCurrencyDef(detectedCurrency).label} from your browser locale`);
+        } catch (error) {
+            console.error('Currency detection error:', error);
+            toast.error('Failed to detect currency preference');
+        } finally {
+            setSavingCurrency(false);
         }
     };
 
@@ -318,6 +366,85 @@ export default function Settings() {
                             {loading ? 'Saving…' : 'Save changes'}
                         </Button>
                     </form>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-xl">Currency Preference</CardTitle>
+                    <CardDescription>Choose the currency used across balances, forms, and transaction lists.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    <Label htmlFor="currency">Currency</Label>
+                    <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                id="currency"
+                                type="button"
+                                variant="outline"
+                                className="min-h-12 w-full justify-between touch-manipulation sm:min-h-10"
+                                disabled={savingCurrency}
+                            >
+                                <span className="truncate">
+                                    {getCurrencySymbol(currency)} {selectedCurrency.code} · {selectedCurrency.label}
+                                </span>
+                                <Search className="h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-[min(22rem,calc(100vw-2rem))] p-0">
+                            <div className="border-b p-3">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={currencySearch}
+                                        onChange={(e) => setCurrencySearch(e.target.value)}
+                                        placeholder="Search currency code or name"
+                                        className="pl-9"
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+                            <div className="max-h-72 overflow-y-auto p-1">
+                                {filteredCurrencies.length === 0 ? (
+                                    <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                                        No currencies found.
+                                    </p>
+                                ) : (
+                                    filteredCurrencies.map((item) => (
+                                        <button
+                                            key={item.code}
+                                            type="button"
+                                            className="flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                            onClick={() => handleCurrencyChange(item.code)}
+                                        >
+                                            <span className="min-w-0">
+                                                <span className="font-medium">
+                                                    {getCurrencySymbol(item.code)} {item.code}
+                                                </span>
+                                                <span className="ml-2 text-muted-foreground">{item.label}</span>
+                                            </span>
+                                            {item.code === currency && (
+                                                <span className="text-xs font-medium text-primary">Selected</span>
+                                            )}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleDetectCurrency}
+                        disabled={savingCurrency}
+                        className="w-full sm:w-auto"
+                    >
+                        <MapPin className="h-4 w-4" />
+                        Detect My Location
+                    </Button>
+                    {savingCurrency && (
+                        <p className="text-xs text-muted-foreground">Saving preference…</p>
+                    )}
                 </CardContent>
             </Card>
 

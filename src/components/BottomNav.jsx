@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, CreditCard, Settings } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { cn } from '@/lib/utils';
 
 const items = [
@@ -27,12 +27,12 @@ export default function BottomNav() {
             role="navigation"
             aria-label="Primary"
         >
-            {items.map(({ path, label, Icon, match }) => {
-                const active = match(location.pathname);
+            {items.map((item) => {
+                const active = item.match(location.pathname);
                 return (
                     <Link
-                        key={path}
-                        to={path}
+                        key={item.path}
+                        to={item.path}
                         className={cn(
                             'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[0.7rem] font-medium transition-colors',
                             active
@@ -41,12 +41,12 @@ export default function BottomNav() {
                         )}
                         aria-current={active ? 'page' : undefined}
                     >
-                        <Icon
-                            className={cn('h-5 w-5 shrink-0', active && 'text-primary')}
-                            strokeWidth={active ? 2.25 : 1.75}
-                            aria-hidden="true"
-                        />
-                        <span>{label}</span>
+                        {React.createElement(item.Icon, {
+                            className: cn('h-5 w-5 shrink-0', active && 'text-primary'),
+                            strokeWidth: active ? 2.25 : 1.75,
+                            'aria-hidden': 'true',
+                        })}
+                        <span>{item.label}</span>
                     </Link>
                 );
             })}

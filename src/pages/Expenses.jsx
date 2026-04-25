@@ -3,7 +3,7 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import {
     Plus,
     Trash2,
@@ -22,13 +22,14 @@ import { Label } from '@/components/ui/label';
 import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 import { CategoryIcon } from '@/lib/categoryIcon';
 import { getCategoryDef, getTransactionType, resolveCategoryId } from '@/lib/constants';
+import { formatCurrency } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 
 const selectTriggerClass =
     'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export default function Expenses() {
-    const { user } = useAuth();
+    const { user, currency } = useAuth();
     const navigate = useNavigate();
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -198,7 +199,7 @@ export default function Expenses() {
                     <CardHeader className="pb-2">
                         <CardDescription>Total Income</CardDescription>
                         <CardTitle className="text-2xl tabular-nums text-emerald-600">
-                            +£{stats.income.toFixed(2)}
+                            +{formatCurrency(stats.income, currency)}
                         </CardTitle>
                     </CardHeader>
                 </Card>
@@ -206,7 +207,7 @@ export default function Expenses() {
                     <CardHeader className="pb-2">
                         <CardDescription>Total Spent</CardDescription>
                         <CardTitle className="text-2xl tabular-nums text-rose-600">
-                            -£{stats.spent.toFixed(2)}
+                            -{formatCurrency(stats.spent, currency)}
                         </CardTitle>
                     </CardHeader>
                 </Card>
@@ -219,7 +220,7 @@ export default function Expenses() {
                                 stats.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'
                             )}
                         >
-                            {stats.balance >= 0 ? '+' : '-'}£{Math.abs(stats.balance).toFixed(2)}
+                            {stats.balance >= 0 ? '+' : '-'}{formatCurrency(Math.abs(stats.balance), currency)}
                         </CardTitle>
                     </CardHeader>
                 </Card>
@@ -332,7 +333,7 @@ export default function Expenses() {
                                                                     transactionType === 'income' ? 'text-emerald-600' : 'text-rose-600'
                                                                 )}
                                                             >
-                                                                {amountPrefix}£{expense.amount.toFixed(2)}
+                                                                {amountPrefix}{formatCurrency(expense.amount, currency)}
                                                             </span>
                                                             <Button
                                                                 type="button"
@@ -374,7 +375,7 @@ export default function Expenses() {
             <Modal
                 isOpen={showDeleteModal}
                 title="Delete Transaction"
-                message={`Are you sure you want to delete "${expenseToDelete?.description}" (£${expenseToDelete?.amount.toFixed(2)})?`}
+                message={`Are you sure you want to delete "${expenseToDelete?.description}" (${formatCurrency(expenseToDelete?.amount, currency)})?`}
                 onConfirm={deleteExpense}
                 onCancel={() => {
                     setShowDeleteModal(false);

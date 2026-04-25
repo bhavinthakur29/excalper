@@ -19,10 +19,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useAuth } from '@/contexts/useAuth';
 import { CATEGORIES, DEFAULT_CATEGORY_ID, INCOME_CATEGORY_ID, getTransactionType, resolveCategoryId } from '@/lib/constants';
+import { getCurrencySymbol } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 
 export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
+    const { currency } = useAuth();
+    const currencySymbol = getCurrencySymbol(currency);
     const [transactionType, setTransactionType] = useState('expense');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
@@ -132,7 +136,7 @@ export default function EditExpenseModal({ isOpen, expense, onClose, onSave }) {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit-expense-amount">Amount (£)</Label>
+                            <Label htmlFor="edit-expense-amount">Amount ({currencySymbol})</Label>
                             <Input
                                 id="edit-expense-amount"
                                 type="number"

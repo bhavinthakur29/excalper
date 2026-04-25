@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { auth } from '../config/firebase';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { FaGoogle } from 'react-icons/fa';
@@ -28,7 +28,7 @@ export default function Login() {
             await signInWithEmailAndPassword(auth, email, password);
             toast.success('Logged in successfully!');
             navigate('/');
-        } catch (error) {
+        } catch {
             toast.error('Login failed. Please check your credentials.');
         } finally {
             setLoading(false);
@@ -41,7 +41,7 @@ export default function Login() {
             await loginWithGoogle();
             toast.success('Logged in with Google!');
             navigate('/');
-        } catch (error) {
+        } catch {
             toast.error('Google login failed.');
         } finally {
             setGoogleLoading(false);

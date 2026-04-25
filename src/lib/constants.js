@@ -11,6 +11,29 @@ export const CATEGORIES = [
 export const DEFAULT_CATEGORY_ID = 'other';
 export const INCOME_CATEGORY_ID = 'income';
 
+export const CURRENCIES = [
+    { code: 'USD', label: 'US Dollar' },
+    { code: 'EUR', label: 'Euro' },
+    { code: 'GBP', label: 'British Pound' },
+    { code: 'INR', label: 'Indian Rupee' },
+    { code: 'CAD', label: 'Canadian Dollar' },
+    { code: 'AUD', label: 'Australian Dollar' },
+    { code: 'AED', label: 'UAE Dirham' },
+    { code: 'JPY', label: 'Japanese Yen' },
+    { code: 'CNY', label: 'Chinese Yuan' },
+    { code: 'SGD', label: 'Singapore Dollar' },
+    { code: 'NZD', label: 'New Zealand Dollar' },
+    { code: 'CHF', label: 'Swiss Franc' },
+    { code: 'SEK', label: 'Swedish Krona' },
+    { code: 'NOK', label: 'Norwegian Krone' },
+    { code: 'DKK', label: 'Danish Krone' },
+    { code: 'ZAR', label: 'South African Rand' },
+    { code: 'BRL', label: 'Brazilian Real' },
+    { code: 'MXN', label: 'Mexican Peso' },
+    { code: 'SAR', label: 'Saudi Riyal' },
+    { code: 'HKD', label: 'Hong Kong Dollar' },
+];
+
 export function getCategoryDef(categoryRef) {
     if (!categoryRef) {
         return CATEGORIES.find((c) => c.id === DEFAULT_CATEGORY_ID);

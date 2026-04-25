@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { ArrowLeft, Save, Calendar } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,11 +17,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { CATEGORIES, DEFAULT_CATEGORY_ID, INCOME_CATEGORY_ID } from '@/lib/constants';
+import { getCurrencySymbol } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 
 export default function ExpenseForm() {
-    const { user } = useAuth();
+    const { user, currency } = useAuth();
     const navigate = useNavigate();
+    const currencySymbol = getCurrencySymbol(currency);
     const [transactionType, setTransactionType] = useState('expense');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
@@ -114,7 +116,7 @@ export default function ExpenseForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="amount">Amount (£)</Label>
+                            <Label htmlFor="amount">Amount ({currencySymbol})</Label>
                             <Input
                                 id="amount"
                                 type="number"

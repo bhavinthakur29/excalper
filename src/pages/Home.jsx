@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { animate, motion as Motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Calendar, Plus, User, ArrowUpRight } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 import { CategoryIcon } from '@/lib/categoryIcon';
 import { INCOME_CATEGORY_ID, getCategoryDef, getTransactionType, resolveCategoryId } from '@/lib/constants';
+import { formatCurrency } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 
 const sectionMotion = {
@@ -21,11 +22,6 @@ const sectionMotion = {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.4 },
 };
-
-const currencyFormatter = new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-});
 
 const startOfWeek = (date) => {
     const next = new Date(date);
@@ -36,9 +32,9 @@ const startOfWeek = (date) => {
     return next;
 };
 
-function AnimatedCurrency({ value, className }) {
+function AnimatedCurrency({ value, currencyCode, className }) {
     const motionValue = useMotionValue(0);
-    const formatted = useTransform(motionValue, (latest) => currencyFormatter.format(latest));
+    const formatted = useTransform(motionValue, (latest) => formatCurrency(latest, currencyCode));
 
     useEffect(() => {
         const controls = animate(motionValue, value, {
@@ -47,13 +43,13 @@ function AnimatedCurrency({ value, className }) {
         });
 
         return () => controls.stop();
-    }, [motionValue, value]);
+    }, [currencyCode, motionValue, value]);
 
     return <Motion.span className={className}>{formatted}</Motion.span>;
 }
 
 export default function Home() {
-    const { user } = useAuth();
+    const { user, currency } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [recentExpenses, setRecentExpenses] = useState([]);
@@ -184,7 +180,7 @@ export default function Home() {
 
         if (lastWeekSpent === 0) {
             return thisWeekSpent > 0
-                ? `You've spent ${currencyFormatter.format(thisWeekSpent)} this week. Last week had no spending to compare.`
+                ? `You've spent ${formatCurrency(thisWeekSpent, currency)} this week. Last week had no spending to compare.`
                 : "You've had no spending this week or last week.";
         }
 
@@ -195,7 +191,7 @@ export default function Home() {
 
         const direction = percentageDelta < 0 ? 'less' : 'more';
         return `You've spent ${Math.round(Math.abs(percentageDelta))}% ${direction} this week than last week.`;
-    }, [allTransactions]);
+    }, [allTransactions, currency]);
 
     if (loading) {
         return (
@@ -291,6 +287,7 @@ export default function Home() {
                                 </div>
                                 <AnimatedCurrency
                                     value={remainingBalance}
+                                    currencyCode={currency}
                                     className={cn(
                                         'block text-4xl font-extrabold tracking-tight sm:text-6xl',
                                         balanceIsLow ? 'text-orange-300' : 'text-white'
@@ -308,6 +305,7 @@ export default function Home() {
                                     <p className="text-sm text-slate-300">Total Income</p>
                                     <AnimatedCurrency
                                         value={totalIncome}
+                                        currencyCode={currency}
                                         className="mt-2 block text-2xl font-bold tracking-tight text-emerald-200"
                                     />
                                 </div>
@@ -315,6 +313,7 @@ export default function Home() {
                                     <p className="text-sm text-slate-300">Total Spent</p>
                                     <AnimatedCurrency
                                         value={totalSpent}
+                                        currencyCode={currency}
                                         className="mt-2 block text-2xl font-bold tracking-tight text-rose-200"
                                     />
                                 </div>
@@ -351,13 +350,13 @@ export default function Home() {
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-sm text-muted-foreground">Spent this month</p>
                                 <p className="mt-2 text-xl font-bold tabular-nums">
-                                    {currencyFormatter.format(totalSpent)} • {formatPercentage(spendingPercentage)}
+                                    {formatCurrency(totalSpent, currency)} • {formatPercentage(spendingPercentage)}
                                 </p>
                             </div>
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-sm text-muted-foreground">Saved so far</p>
                                 <p className="mt-2 text-xl font-bold tabular-nums">
-                                    {currencyFormatter.format(remainingBalance)} • {formatPercentage(savingsPercentage)}
+                                    {formatCurrency(remainingBalance, currency)} • {formatPercentage(savingsPercentage)}
                                 </p>
                             </div>
                         </div>
@@ -437,7 +436,7 @@ export default function Home() {
                                                     <span className="truncate text-sm font-medium">{entry.name}</span>
                                                 </span>
                                                 <span className="shrink-0 text-right text-sm font-bold tabular-nums">
-                                                    {currencyFormatter.format(entry.amount)}
+                                                    {formatCurrency(entry.amount, currency)}
                                                     <span className="ml-2 text-muted-foreground">
                                                         {formatPercentage(entry.percentage)}
                                                     </span>
@@ -540,7 +539,7 @@ export default function Home() {
                                                                     transactionType === 'income' ? 'text-emerald-600' : 'text-rose-600'
                                                                 )}
                                                             >
-                                                                {amountPrefix}£{expense.amount.toFixed(2)}
+                                                                {amountPrefix}{formatCurrency(expense.amount, currency)}
                                                             </p>
                                                         </div>
                                                     </Motion.li>
