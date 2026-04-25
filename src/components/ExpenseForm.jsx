@@ -29,36 +29,34 @@ export default function ExpenseForm() {
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState(DEFAULT_CATEGORY_ID);
     const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA'));
-    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setLoading(true);
 
         const selectedCategory = transactionType === 'income' ? INCOME_CATEGORY_ID : category;
 
         if (!description || !amount || isNaN(Number(amount)) || Number(amount) <= 0 || !selectedCategory || !date) {
             toast.error('Please provide all required fields');
-            setLoading(false);
             return;
         }
 
-        try {
-            await addDoc(collection(db, 'users', user.uid, 'expenses'), {
-                description,
-                amount: parseFloat(amount),
-                type: transactionType,
-                category: selectedCategory,
-                timestamp: Timestamp.fromDate(new Date(`${date}T00:00:00`)),
-            });
-
-            toast.success(`${transactionType === 'income' ? 'Income' : 'Expense'} added successfully!`);
-            navigate('/expenses');
-        } catch {
+        addDoc(collection(db, 'users', user.uid, 'expenses'), {
+            description,
+            amount: parseFloat(amount),
+            type: transactionType,
+            category: selectedCategory,
+            timestamp: Timestamp.fromDate(new Date(`${date}T00:00:00`)),
+        }).catch(() => {
             toast.error('Failed to add transaction. Please try again.');
-        } finally {
-            setLoading(false);
-        }
+        });
+
+        setDescription('');
+        setAmount('');
+        setCategory(DEFAULT_CATEGORY_ID);
+        setDate(new Date().toLocaleDateString('en-CA'));
+        setTransactionType('expense');
+        toast.success('Saved locally (Syncing when online).');
+        navigate('/expenses');
     };
 
     return (
@@ -168,10 +166,9 @@ export default function ExpenseForm() {
                                 'w-full min-h-12 touch-manipulation sm:min-h-9',
                                 transactionType === 'income' && 'bg-emerald-600 text-white hover:bg-emerald-700'
                             )}
-                            disabled={loading}
                         >
                             <Save className="h-4 w-4" />
-                            {loading ? 'Adding…' : `Add ${transactionType}`}
+                            Add {transactionType}
                         </Button>
                     </form>
                 </CardContent>

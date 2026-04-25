@@ -16,12 +16,16 @@ import {
     MapPin,
     Search,
     Download,
+    DownloadCloud,
+    ShieldCheck,
+    Smartphone,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
 import { backfillMissingTimestamps } from '../utils/backfillTimestamps';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -49,6 +53,7 @@ export default function Settings() {
     const [backfillingTimestamps, setBackfillingTimestamps] = useState(false);
     const [uploading, setUploading] = useState(false);
     const photoInputRef = useRef(null);
+    const isAndroid = /Android/i.test(navigator.userAgent);
     const selectedCurrency = getCurrencyDef(currency);
     const filteredCurrencies = useMemo(() => {
         const query = currencySearch.trim().toLowerCase();
@@ -314,6 +319,50 @@ export default function Settings() {
         reader.readAsDataURL(file);
     };
 
+    const androidAppCard = (
+        <Card className="border-primary/30 bg-primary/5">
+            <CardHeader>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1.5">
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                            <Smartphone className="h-5 w-5 text-primary" aria-hidden="true" />
+                            Excalper for Android
+                            <Badge className="animate-pulse">New</Badge>
+                        </CardTitle>
+                        <CardDescription>
+                            Download the official APK for a native experience with enhanced performance.
+                        </CardDescription>
+                    </div>
+                    <Badge variant="secondary" className="w-fit gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                        Verified
+                    </Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <Button asChild className="w-full shadow-primary/20 sm:w-auto">
+                        <a href="/excalperv1.apk" download>
+                            <DownloadCloud className="h-4 w-4" />
+                            Download APK
+                        </a>
+                    </Button>
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                        <span>excalperv1.apk</span>
+                        <Badge variant="outline" className="gap-1.5">
+                            <ShieldCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                            Verified
+                        </Badge>
+                    </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    Note: You may need to enable &apos;Install from Unknown Sources&apos; in your Android settings to
+                    complete the installation.
+                </p>
+            </CardContent>
+        </Card>
+    );
+
     if (!user) {
         return (
             <div className="space-y-6 animate-in fade-in duration-500">
@@ -492,6 +541,8 @@ export default function Settings() {
                 </CardContent>
             </Card>
 
+            {isAndroid && androidAppCard}
+
             <Card>
                 <CardHeader>
                     <CardTitle className="text-xl">Install Excalper</CardTitle>
@@ -515,6 +566,8 @@ export default function Settings() {
                     </p>
                 </CardContent>
             </Card>
+
+            {!isAndroid && androidAppCard}
 
             <Card>
                 <CardHeader>

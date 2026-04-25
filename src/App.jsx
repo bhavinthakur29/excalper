@@ -7,6 +7,7 @@ import { useAuth } from './contexts/useAuth';
 import Navbar from './components/Navbar/Navbar';
 import BottomNav from './components/BottomNav';
 import Loading from './components/Loading/Loading';
+import NetworkStatus from './components/NetworkStatus';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import ExpenseForm from './pages/ExpenseForm';
@@ -30,6 +31,7 @@ export default function App() {
     <AuthProvider>
       <Router>
         <div className="min-h-screen flex flex-col bg-background font-sans antialiased">
+          <NetworkStatus />
           <Navbar />
           <main className="flex-1 w-full max-w-2xl mx-auto p-4 sm:p-6 md:p-8 pb-24 sm:pb-8">
             <Routes>
