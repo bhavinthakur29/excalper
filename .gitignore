@@ -30,6 +30,7 @@ android.keystore
 
 # Ignore compiled Android binaries and signature files
 *.apk
+!public/excalper.apk
 *.idsig
 *.aab
 
