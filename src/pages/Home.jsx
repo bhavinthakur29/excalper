@@ -5,6 +5,7 @@ import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { animate, motion as Motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Calendar, Plus, User, ArrowUpRight } from 'lucide-react';
+import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-toastify';
 import { toJsDate } from '../utils/timestamps';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 import { CategoryIcon } from '@/lib/categoryIcon';
-import { getCategoryDef, getTransactionType, resolveCategoryId } from '@/lib/constants';
+import { INCOME_CATEGORY_ID, getCategoryDef, getTransactionType, resolveCategoryId } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 const sectionMotion = {
@@ -25,6 +26,15 @@ const currencyFormatter = new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
 });
+
+const startOfWeek = (date) => {
+    const next = new Date(date);
+    next.setHours(0, 0, 0, 0);
+    const day = next.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    next.setDate(next.getDate() + mondayOffset);
+    return next;
+};
 
 function AnimatedCurrency({ value, className }) {
     const motionValue = useMotionValue(0);
@@ -47,6 +57,7 @@ export default function Home() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [recentExpenses, setRecentExpenses] = useState([]);
+    const [allTransactions, setAllTransactions] = useState([]);
     const [photoBase64, setPhotoBase64] = useState('');
     const [totalIncome, setTotalIncome] = useState(0);
     const [totalSpent, setTotalSpent] = useState(0);
@@ -75,9 +86,11 @@ export default function Home() {
 
             const allExpensesSnapshot = await getDocs(expensesRef);
             const allExpenses = allExpensesSnapshot.docs.map((d) => ({
+                id: d.id,
                 ...d.data(),
                 date: toJsDate(d.data().timestamp),
             }));
+            setAllTransactions(allExpenses);
 
             const now = new Date();
             const monthlyTransactions = allExpenses.filter((exp) => {
@@ -123,6 +136,67 @@ export default function Home() {
         });
     }, [recentExpenses, selectedCategories]);
 
+    const monthlyExpenseBreakdown = useMemo(() => {
+        const now = new Date();
+        const monthlyExpenses = allTransactions.filter((transaction) => {
+            const transactionDate = transaction.date;
+            if (!transactionDate || getTransactionType(transaction) !== 'expense') return false;
+            return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
+        });
+
+        const totalsByCategory = monthlyExpenses.reduce((acc, transaction) => {
+            const categoryId = resolveCategoryId(transaction.category ?? transaction.paymentMode);
+            if (categoryId === INCOME_CATEGORY_ID) return acc;
+            acc[categoryId] = (acc[categoryId] || 0) + (Number(transaction.amount) || 0);
+            return acc;
+        }, {});
+
+        return Object.entries(totalsByCategory)
+            .map(([categoryId, amount]) => {
+                const category = getCategoryDef(categoryId);
+                const percentage = totalSpent > 0 ? (amount / totalSpent) * 100 : 0;
+                return {
+                    id: categoryId,
+                    name: category.label,
+                    amount,
+                    percentage,
+                    color: category.chartColor,
+                };
+            })
+            .sort((a, b) => b.amount - a.amount);
+    }, [allTransactions, totalSpent]);
+
+    const weeklySpendingInsight = useMemo(() => {
+        const now = new Date();
+        const currentWeekStart = startOfWeek(now);
+        const previousWeekStart = new Date(currentWeekStart);
+        previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+
+        const expenseTransactions = allTransactions.filter((transaction) => {
+            return transaction.date && getTransactionType(transaction) === 'expense';
+        });
+        const thisWeekSpent = expenseTransactions
+            .filter((transaction) => transaction.date >= currentWeekStart)
+            .reduce((sum, transaction) => sum + (Number(transaction.amount) || 0), 0);
+        const lastWeekSpent = expenseTransactions
+            .filter((transaction) => transaction.date >= previousWeekStart && transaction.date < currentWeekStart)
+            .reduce((sum, transaction) => sum + (Number(transaction.amount) || 0), 0);
+
+        if (lastWeekSpent === 0) {
+            return thisWeekSpent > 0
+                ? `You've spent ${currencyFormatter.format(thisWeekSpent)} this week. Last week had no spending to compare.`
+                : "You've had no spending this week or last week.";
+        }
+
+        const percentageDelta = ((thisWeekSpent - lastWeekSpent) / lastWeekSpent) * 100;
+        if (Math.abs(percentageDelta) < 1) {
+            return "You've spent about the same this week as last week.";
+        }
+
+        const direction = percentageDelta < 0 ? 'less' : 'more';
+        return `You've spent ${Math.round(Math.abs(percentageDelta))}% ${direction} this week than last week.`;
+    }, [allTransactions]);
+
     if (loading) {
         return (
             <div className="space-y-6 animate-in fade-in duration-500">
@@ -156,6 +230,12 @@ export default function Home() {
               ? 'bg-amber-500'
               : 'bg-destructive';
     const formatPercentage = (value) => `${Math.round(value)}%`;
+    const handleBreakdownCategorySelect = (categoryId) => {
+        setSelectedCategories((current) => {
+            const alreadySelected = current.length === 1 && current[0] === categoryId;
+            return alreadySelected ? [] : [categoryId];
+        });
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -281,6 +361,97 @@ export default function Home() {
                                 </p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+            </Motion.div>
+
+            <Motion.div {...sectionMotion} transition={{ duration: 0.4, delay: 0.04 }}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Monthly Breakdown</CardTitle>
+                        <CardDescription>
+                            Spending by category for this month. Tap a slice to filter recent transactions.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        {monthlyExpenseBreakdown.length === 0 ? (
+                            <div className="rounded-lg border border-dashed p-6 text-center">
+                                <p className="font-semibold">No spending to chart yet</p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Add an expense this month to see your category breakdown.
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="h-64 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={monthlyExpenseBreakdown}
+                                                dataKey="amount"
+                                                nameKey="name"
+                                                innerRadius="58%"
+                                                outerRadius="82%"
+                                                paddingAngle={3}
+                                                strokeWidth={0}
+                                                onClick={(entry) => handleBreakdownCategorySelect(entry.id)}
+                                                className="outline-none"
+                                            >
+                                                {monthlyExpenseBreakdown.map((entry) => {
+                                                    const muted =
+                                                        selectedCategories.length > 0 &&
+                                                        !selectedCategories.includes(entry.id);
+                                                    return (
+                                                        <Cell
+                                                            key={entry.id}
+                                                            fill={entry.color}
+                                                            opacity={muted ? 0.35 : 1}
+                                                            className="cursor-pointer outline-none transition-opacity"
+                                                        />
+                                                    );
+                                                })}
+                                            </Pie>
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {monthlyExpenseBreakdown.map((entry) => {
+                                        const active = selectedCategories.includes(entry.id);
+                                        return (
+                                            <button
+                                                key={entry.id}
+                                                type="button"
+                                                onClick={() => handleBreakdownCategorySelect(entry.id)}
+                                                className={cn(
+                                                    'flex w-full items-center justify-between gap-4 rounded-lg border p-3 text-left transition-colors hover:bg-muted/60',
+                                                    active && 'border-primary bg-muted'
+                                                )}
+                                            >
+                                                <span className="flex min-w-0 items-center gap-3">
+                                                    <span
+                                                        className="h-3 w-3 shrink-0 rounded-full"
+                                                        style={{ backgroundColor: entry.color }}
+                                                        aria-hidden="true"
+                                                    />
+                                                    <span className="truncate text-sm font-medium">{entry.name}</span>
+                                                </span>
+                                                <span className="shrink-0 text-right text-sm font-bold tabular-nums">
+                                                    {currencyFormatter.format(entry.amount)}
+                                                    <span className="ml-2 text-muted-foreground">
+                                                        {formatPercentage(entry.percentage)}
+                                                    </span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="rounded-xl bg-muted/40 p-4 text-sm font-medium">
+                                    {weeklySpendingInsight}
+                                </div>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
             </Motion.div>
