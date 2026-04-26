@@ -223,8 +223,8 @@ export default function Home() {
         spendingPercentage < 50
             ? 'bg-emerald-500'
             : spendingPercentage <= 80
-              ? 'bg-amber-500'
-              : 'bg-destructive';
+                ? 'bg-amber-500'
+                : 'bg-destructive';
     const formatPercentage = (value) => `${Math.round(value)}%`;
     const handleBreakdownCategorySelect = (categoryId) => {
         setSelectedCategories((current) => {
@@ -260,7 +260,7 @@ export default function Home() {
                                             Account Overview
                                         </p>
                                         <CardTitle className="mt-2 text-2xl text-white sm:text-3xl">
-                                            Welcome back, {user?.displayName || 'User'}
+                                            Welcome back, {user?.displayName?.split(' ')[0] || 'User'}
                                         </CardTitle>
                                         <CardDescription className="mt-1 text-slate-300">
                                             Your live monthly balance after this month&apos;s transactions.
