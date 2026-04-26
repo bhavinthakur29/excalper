@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, CreditCard, Settings } from 'lucide-react';
+import { CreditCard, HandCoins, Home, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +12,7 @@ const items = [
         Icon: CreditCard,
         match: (p) => p === '/expenses' || p === '/expense-form',
     },
+    { path: '/loans', label: 'Loans', Icon: HandCoins, match: (p) => p === '/loans' },
     { path: '/settings', label: 'Settings', Icon: Settings, match: (p) => p === '/settings' },
 ];
 

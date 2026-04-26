@@ -324,7 +324,7 @@ export default function Settings() {
         reader.readAsDataURL(file);
     };
 
-    const renderSettingsAccordionSection = ({ id, title, description, Icon, badge, disabled = false, children }) => {
+    const renderSettingsAccordionSection = ({ id, title, description, icon, badge, disabled = false, children }) => {
         const isOpen = openSettingsSection === id;
 
         return (
@@ -345,7 +345,10 @@ export default function Settings() {
                         }`}
                 >
                     <div className="flex min-w-0 gap-3">
-                        <Icon className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" aria-hidden="true" />
+                        {React.createElement(icon, {
+                            className: 'mt-0.5 h-5 w-5 shrink-0 text-gray-500',
+                            'aria-hidden': 'true',
+                        })}
                         <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
                                 <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
@@ -382,7 +385,7 @@ export default function Settings() {
             id: 'web',
             title: 'Install Excalper (PWA)',
             description: 'Add Excalper to your home screen for faster launches and offline access.',
-            Icon: Monitor,
+            icon: Monitor,
             children: (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="max-w-md text-sm text-muted-foreground">
@@ -405,7 +408,7 @@ export default function Settings() {
             id: 'android',
             title: 'Excalper for Android',
             description: 'Download the official APK for a native experience with enhanced performance.',
-            Icon: Smartphone,
+            icon: Smartphone,
             badge: <Badge className="animate-pulse">New</Badge>,
             children: (
                 <div className="space-y-3">
@@ -441,7 +444,7 @@ export default function Settings() {
             id: 'ios',
             title: 'Excalper for iOS',
             description: 'iPhone and iPad support is planned for a future release.',
-            Icon: Apple,
+            icon: Apple,
             badge: (
                 <Badge variant="secondary" className="bg-gray-200 text-gray-600 hover:bg-gray-200">
                     Coming Soon
@@ -454,7 +457,7 @@ export default function Settings() {
             id: 'security',
             title: 'Security',
             description: 'Change the password for your account.',
-            Icon: Shield,
+            icon: Shield,
             children: (
                 <Button
                     type="button"

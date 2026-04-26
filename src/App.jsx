@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import ExpenseForm from './pages/ExpenseForm';
 import Expenses from './pages/Expenses';
+import Loans from './pages/Loans';
 import Settings from './pages/Settings';
 
 function PrivateRoute({ children }) {
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
               <Route path="/expenses" element={<PrivateRoute><Expenses /></PrivateRoute>} />
               <Route path="/expense-form" element={<PrivateRoute><ExpenseForm /></PrivateRoute>} />
+              <Route path="/loans" element={<PrivateRoute><Loans /></PrivateRoute>} />
               <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>

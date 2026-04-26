@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 const links = [
     { path: '/', label: 'Home' },
     { path: '/expenses', label: 'Expenses' },
+    { path: '/loans', label: 'Loans' },
     { path: '/settings', label: 'Settings' },
 ];
 

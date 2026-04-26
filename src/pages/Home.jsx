@@ -300,21 +300,32 @@ export default function Home() {
                                 )}
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-                                    <p className="text-sm text-slate-300">Total Income</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">Total Income</p>
                                     <AnimatedCurrency
                                         value={totalIncome}
                                         currencyCode={currency}
-                                        className="mt-2 block text-2xl font-bold tracking-tight text-emerald-200"
+                                        className="mt-1 block truncate text-sm font-bold tracking-tight text-emerald-200 sm:text-base"
                                     />
                                 </div>
-                                <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-                                    <p className="text-sm text-slate-300">Total Spent</p>
+                                <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">Expenses</p>
                                     <AnimatedCurrency
                                         value={totalSpent}
                                         currencyCode={currency}
-                                        className="mt-2 block text-2xl font-bold tracking-tight text-rose-200"
+                                        className="mt-1 block truncate text-sm font-bold tracking-tight text-rose-200 sm:text-base"
+                                    />
+                                </div>
+                                <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">Balance</p>
+                                    <AnimatedCurrency
+                                        value={remainingBalance}
+                                        currencyCode={currency}
+                                        className={cn(
+                                            'mt-1 block truncate text-sm font-bold tracking-tight sm:text-base',
+                                            balanceIsLow ? 'text-orange-300' : 'text-white'
+                                        )}
                                     />
                                 </div>
                             </div>
