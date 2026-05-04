@@ -16,6 +16,7 @@ import { toast } from 'react-toastify';
 import Modal from '../components/Modal/Modal';
 import EditExpenseModal from '../components/Modal/EditExpenseModal';
 import { toJsDate, monthKeyFromTimestamp } from '../utils/timestamps';
+import { getCurrentBillingCycle, isDateInBillingCycle } from '../utils/billingCycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -29,11 +30,11 @@ const selectTriggerClass =
     'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 export default function Expenses() {
-    const { user, currency } = useAuth();
+    const { user, currency, billingCycleStart } = useAuth();
     const navigate = useNavigate();
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedMonth, setSelectedMonth] = useState('');
+    const [selectedMonth, setSelectedMonth] = useState('current-cycle');
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [expenseToDelete, setExpenseToDelete] = useState(null);
@@ -46,6 +47,10 @@ export default function Expenses() {
     });
     const [showEditModal, setShowEditModal] = useState(false);
     const [expenseToEdit, setExpenseToEdit] = useState(null);
+    const currentBillingCycle = React.useMemo(
+        () => getCurrentBillingCycle(new Date(), billingCycleStart),
+        [billingCycleStart]
+    );
 
     const fetchExpenses = useCallback(async () => {
         if (!user) return;
@@ -80,7 +85,9 @@ export default function Expenses() {
     const calculateStats = useCallback(() => {
         let filteredExpenses = expenses;
 
-        if (selectedMonth) {
+        if (selectedMonth === 'current-cycle') {
+            filteredExpenses = filteredExpenses.filter(exp => isDateInBillingCycle(exp.date, currentBillingCycle));
+        } else if (selectedMonth) {
             filteredExpenses = filteredExpenses.filter(exp => {
                 const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === selectedMonth;
@@ -103,7 +110,7 @@ export default function Expenses() {
         const count = filteredExpenses.length;
 
         setStats({ income, spent, balance: income - spent, count });
-    }, [expenses, selectedCategories, selectedMonth]);
+    }, [currentBillingCycle, expenses, selectedCategories, selectedMonth]);
 
     useEffect(() => {
         if (user) {
@@ -132,7 +139,9 @@ export default function Expenses() {
     const getFilteredExpenses = () => {
         let filtered = expenses;
 
-        if (selectedMonth) {
+        if (selectedMonth === 'current-cycle') {
+            filtered = filtered.filter(exp => isDateInBillingCycle(exp.date, currentBillingCycle));
+        } else if (selectedMonth) {
             filtered = filtered.filter(exp => {
                 const expMonth = monthKeyFromTimestamp(exp.timestamp);
                 return expMonth === selectedMonth;
@@ -232,17 +241,18 @@ export default function Expenses() {
                         <Filter className="h-5 w-5" aria-hidden="true" />
                         Filters
                     </CardTitle>
-                        <CardDescription>Refine the list by month and category.</CardDescription>
+                        <CardDescription>Refine the list by billing cycle, month, and category.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-2">
-                        <Label htmlFor="expenses-month">Month</Label>
+                        <Label htmlFor="expenses-month">Period</Label>
                         <select
                             id="expenses-month"
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(e.target.value)}
                             className={selectTriggerClass}
                         >
+                            <option value="current-cycle">Current billing cycle</option>
                             <option value="">All months</option>
                             {availableMonths.map(month => (
                                 <option key={month} value={month}>{formatMonthLabel(month)}</option>

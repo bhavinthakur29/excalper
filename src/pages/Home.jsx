@@ -8,6 +8,7 @@ import { Calendar, Plus, User, ArrowUpRight } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-toastify';
 import { toJsDate } from '../utils/timestamps';
+import { getCurrentBillingCycle, isDateInBillingCycle } from '../utils/billingCycle';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -49,15 +50,48 @@ function AnimatedCurrency({ value, currencyCode, className }) {
 }
 
 export default function Home() {
-    const { user, currency } = useAuth();
+    const { user, currency, billingCycleStart } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [recentExpenses, setRecentExpenses] = useState([]);
     const [allTransactions, setAllTransactions] = useState([]);
     const [photoBase64, setPhotoBase64] = useState('');
-    const [totalIncome, setTotalIncome] = useState(0);
-    const [totalSpent, setTotalSpent] = useState(0);
     const [selectedCategories, setSelectedCategories] = useState([]);
+    const currentBillingCycle = useMemo(
+        () => getCurrentBillingCycle(new Date(), billingCycleStart),
+        [billingCycleStart]
+    );
+
+    const { walletBalance, cycleIncome, cycleSpent, cycleNet } = useMemo(() => {
+        let allTimeIncome = 0;
+        let allTimeExpense = 0;
+        let cycleIncomeSum = 0;
+        let cycleSpentSum = 0;
+
+        for (const t of allTransactions) {
+            const type = getTransactionType(t);
+            const amount = Number(t.amount) || 0;
+            if (type === 'income') {
+                allTimeIncome += amount;
+            } else if (type === 'expense') {
+                allTimeExpense += amount;
+            }
+            if (t.date && isDateInBillingCycle(t.date, currentBillingCycle)) {
+                if (type === 'income') {
+                    cycleIncomeSum += amount;
+                } else if (type === 'expense') {
+                    cycleSpentSum += amount;
+                }
+            }
+        }
+
+        return {
+            walletBalance: allTimeIncome - allTimeExpense,
+            cycleIncome: cycleIncomeSum,
+            cycleSpent: cycleSpentSum,
+            cycleNet: cycleIncomeSum - cycleSpentSum,
+        };
+    }, [allTransactions, currentBillingCycle]);
 
     const fetchDashboardData = useCallback(async () => {
         if (!user) return;
@@ -87,22 +121,6 @@ export default function Home() {
                 date: toJsDate(d.data().timestamp),
             }));
             setAllTransactions(allExpenses);
-
-            const now = new Date();
-            const monthlyTransactions = allExpenses.filter((exp) => {
-                const expDate = exp.date;
-                if (!expDate) return false;
-                return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
-            });
-            const thisMonthIncome = monthlyTransactions
-                .filter((exp) => getTransactionType(exp) === 'income')
-                .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
-            const thisMonthSpent = monthlyTransactions
-                .filter((exp) => getTransactionType(exp) === 'expense')
-                .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
-
-            setTotalIncome(thisMonthIncome);
-            setTotalSpent(thisMonthSpent);
         } catch {
             toast.error('Failed to load dashboard data');
         } finally {
@@ -124,6 +142,7 @@ export default function Home() {
             year: 'numeric',
         });
     };
+    const billingCycleLabel = `${formatDate(currentBillingCycle.startDate)} - ${formatDate(currentBillingCycle.endDate)}`;
 
     const filteredRecentExpenses = useMemo(() => {
         return recentExpenses.filter((t) => {
@@ -133,14 +152,13 @@ export default function Home() {
     }, [recentExpenses, selectedCategories]);
 
     const monthlyExpenseBreakdown = useMemo(() => {
-        const now = new Date();
-        const monthlyExpenses = allTransactions.filter((transaction) => {
+        const cycleExpenses = allTransactions.filter((transaction) => {
             const transactionDate = transaction.date;
             if (!transactionDate || getTransactionType(transaction) !== 'expense') return false;
-            return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
+            return isDateInBillingCycle(transactionDate, currentBillingCycle);
         });
 
-        const totalsByCategory = monthlyExpenses.reduce((acc, transaction) => {
+        const totalsByCategory = cycleExpenses.reduce((acc, transaction) => {
             const categoryId = resolveCategoryId(transaction.category ?? transaction.paymentMode);
             if (categoryId === INCOME_CATEGORY_ID) return acc;
             acc[categoryId] = (acc[categoryId] || 0) + (Number(transaction.amount) || 0);
@@ -150,7 +168,7 @@ export default function Home() {
         return Object.entries(totalsByCategory)
             .map(([categoryId, amount]) => {
                 const category = getCategoryDef(categoryId);
-                const percentage = totalSpent > 0 ? (amount / totalSpent) * 100 : 0;
+                const percentage = cycleSpent > 0 ? (amount / cycleSpent) * 100 : 0;
                 return {
                     id: categoryId,
                     name: category.label,
@@ -160,7 +178,7 @@ export default function Home() {
                 };
             })
             .sort((a, b) => b.amount - a.amount);
-    }, [allTransactions, totalSpent]);
+    }, [allTransactions, currentBillingCycle, cycleSpent]);
 
     const weeklySpendingInsight = useMemo(() => {
         const now = new Date();
@@ -215,10 +233,9 @@ export default function Home() {
         );
     }
 
-    const remainingBalance = totalIncome - totalSpent;
-    const balanceIsLow = totalIncome > 0 && remainingBalance < totalIncome * 0.1;
-    const spendingPercentage = totalIncome > 0 ? (totalSpent / totalIncome) * 100 : 0;
-    const savingsPercentage = totalIncome > 0 ? (remainingBalance / totalIncome) * 100 : 0;
+    const cycleCashFlowLow = cycleIncome > 0 && cycleNet < cycleIncome * 0.1;
+    const spendingPercentage = cycleIncome > 0 ? (cycleSpent / cycleIncome) * 100 : 0;
+    const savingsPercentage = cycleIncome > 0 ? (cycleNet / cycleIncome) * 100 : 0;
     const spendingProgressColor =
         spendingPercentage < 50
             ? 'bg-emerald-500'
@@ -263,7 +280,7 @@ export default function Home() {
                                             Welcome back, {user?.displayName?.split(' ')[0] || 'User'}
                                         </CardTitle>
                                         <CardDescription className="mt-1 text-slate-300">
-                                            Your live monthly balance after this month&apos;s transactions.
+                                            Current Balance is all-time; cycle summaries cover {billingCycleLabel}.
                                         </CardDescription>
                                     </div>
                                 </div>
@@ -283,48 +300,52 @@ export default function Home() {
                             <div className="rounded-3xl border border-white/10 bg-white/[0.08] p-5 shadow-inner shadow-white/5 backdrop-blur">
                                 <div className="mb-2 inline-flex items-center gap-2 text-sm text-slate-300">
                                     <Calendar className="h-4 w-4" aria-hidden="true" />
-                                    <span>Total Balance</span>
+                                    <span>Current Balance</span>
                                 </div>
                                 <AnimatedCurrency
-                                    value={remainingBalance}
+                                    value={walletBalance}
                                     currencyCode={currency}
                                     className={cn(
                                         'block text-4xl font-extrabold tracking-tight sm:text-6xl',
-                                        balanceIsLow ? 'text-orange-300' : 'text-white'
+                                        walletBalance < 0 ? 'text-orange-300' : 'text-white'
                                     )}
                                 />
-                                {balanceIsLow && (
+                                {cycleCashFlowLow && (
                                     <p className="mt-2 text-sm font-medium text-orange-200">
-                                        Warning: you have less than 10% of this month&apos;s income remaining.
+                                        Warning: you have less than 10% of this cycle&apos;s income remaining.
                                     </p>
                                 )}
                             </div>
 
                             <div className="grid grid-cols-3 gap-2">
                                 <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">Total Income</p>
+                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">
+                                        Income (This Cycle)
+                                    </p>
                                     <AnimatedCurrency
-                                        value={totalIncome}
+                                        value={cycleIncome}
                                         currencyCode={currency}
                                         className="mt-1 block truncate text-sm font-bold tracking-tight text-emerald-200 sm:text-base"
                                     />
                                 </div>
                                 <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">Expenses</p>
+                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">
+                                        Expenses (This Cycle)
+                                    </p>
                                     <AnimatedCurrency
-                                        value={totalSpent}
+                                        value={cycleSpent}
                                         currencyCode={currency}
                                         className="mt-1 block truncate text-sm font-bold tracking-tight text-rose-200 sm:text-base"
                                     />
                                 </div>
                                 <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">Balance</p>
+                                    <p className="truncate text-[10px] text-slate-300 sm:text-xs">Net (This Cycle)</p>
                                     <AnimatedCurrency
-                                        value={remainingBalance}
+                                        value={cycleNet}
                                         currencyCode={currency}
                                         className={cn(
                                             'mt-1 block truncate text-sm font-bold tracking-tight sm:text-base',
-                                            balanceIsLow ? 'text-orange-300' : 'text-white'
+                                            cycleCashFlowLow ? 'text-orange-300' : 'text-white'
                                         )}
                                     />
                                 </div>
@@ -339,7 +360,7 @@ export default function Home() {
                     <CardHeader>
                         <CardTitle>Budget Insights</CardTitle>
                         <CardDescription>
-                            Spending versus income for the current month.
+                            Spending versus income for {billingCycleLabel}.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
@@ -359,15 +380,15 @@ export default function Home() {
 
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="rounded-xl border bg-muted/30 p-4">
-                                <p className="text-sm text-muted-foreground">Spent this month</p>
+                                <p className="text-sm text-muted-foreground">Spent this cycle</p>
                                 <p className="mt-2 text-xl font-bold tabular-nums">
-                                    {formatCurrency(totalSpent, currency)} • {formatPercentage(spendingPercentage)}
+                                    {formatCurrency(cycleSpent, currency)} • {formatPercentage(spendingPercentage)}
                                 </p>
                             </div>
                             <div className="rounded-xl border bg-muted/30 p-4">
                                 <p className="text-sm text-muted-foreground">Saved so far</p>
                                 <p className="mt-2 text-xl font-bold tabular-nums">
-                                    {formatCurrency(remainingBalance, currency)} • {formatPercentage(savingsPercentage)}
+                                    {formatCurrency(cycleNet, currency)} • {formatPercentage(savingsPercentage)}
                                 </p>
                             </div>
                         </div>
@@ -380,7 +401,7 @@ export default function Home() {
                     <CardHeader>
                         <CardTitle>Monthly Breakdown</CardTitle>
                         <CardDescription>
-                            Spending by category for this month. Tap a slice to filter recent transactions.
+                            Spending by category for this billing cycle. Tap a slice to filter recent transactions.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
@@ -388,12 +409,12 @@ export default function Home() {
                             <div className="rounded-lg border border-dashed p-6 text-center">
                                 <p className="font-semibold">No spending to chart yet</p>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Add an expense this month to see your category breakdown.
+                                    Add an expense this cycle to see your category breakdown.
                                 </p>
                             </div>
                         ) : (
                             <>
-                                <div className="h-64 w-full">
+                                <div className="w-full h-64">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie

@@ -22,6 +22,7 @@ import {
     Monitor,
     Apple,
     Shield,
+    CalendarDays,
     ChevronDown,
     ChevronUp,
 } from 'lucide-react';
@@ -37,11 +38,13 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CURRENCIES } from '@/lib/constants';
 import { getCurrencyDef, getCurrencySymbol, getLocaleCurrency } from '@/lib/currency';
+import { normalizeBillingCycleStart } from '@/utils/billingCycle';
 
 export default function Settings() {
-    const { user, currency, updateCurrency, logout } = useAuth();
+    const { user, currency, billingCycleStart, updateCurrency, updateBillingCycleStart, logout } = useAuth();
     const [loading, setLoading] = useState(false);
     const [savingCurrency, setSavingCurrency] = useState(false);
+    const [savingBillingCycle, setSavingBillingCycle] = useState(false);
     const [currencyOpen, setCurrencyOpen] = useState(false);
     const [currencySearch, setCurrencySearch] = useState('');
     const [installPrompt, setInstallPrompt] = useState(null);
@@ -233,6 +236,20 @@ export default function Settings() {
             toast.error('Failed to detect currency preference');
         } finally {
             setSavingCurrency(false);
+        }
+    };
+
+    const handleBillingCycleStartChange = async (event) => {
+        const nextStartDay = normalizeBillingCycleStart(event.target.value);
+        setSavingBillingCycle(true);
+        try {
+            await updateBillingCycleStart(nextStartDay);
+            toast.success('Monthly cycle start date updated');
+        } catch (error) {
+            console.error('Billing cycle update error:', error);
+            toast.error('Failed to update monthly cycle start date');
+        } finally {
+            setSavingBillingCycle(false);
         }
     };
 
@@ -645,6 +662,43 @@ export default function Settings() {
                         Detect My Location
                     </Button>
                     {savingCurrency && (
+                        <p className="text-xs text-muted-foreground">Saving preference…</p>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                        <CalendarDays className="h-5 w-5" aria-hidden="true" />
+                        Monthly Cycle Start Date
+                    </CardTitle>
+                    <CardDescription>
+                        Choose the day your dashboard month should reset.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    <Label htmlFor="billingCycleStart">Billing cycle starts on</Label>
+                    <select
+                        id="billingCycleStart"
+                        value={normalizeBillingCycleStart(billingCycleStart)}
+                        onChange={handleBillingCycleStartChange}
+                        disabled={savingBillingCycle}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:max-w-xs"
+                    >
+                        {Array.from({ length: 31 }, (_, index) => {
+                            const day = index + 1;
+                            return (
+                                <option key={day} value={day}>
+                                    Day {day}
+                                </option>
+                            );
+                        })}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                        Months with fewer days use the last day of that month.
+                    </p>
+                    {savingBillingCycle && (
                         <p className="text-xs text-muted-foreground">Saving preference…</p>
                     )}
                 </CardContent>
