@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../contexts/useAuth';
 import { updateProfile, updatePassword, deleteUser } from 'firebase/auth';
-import { doc, updateDoc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, setDoc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import {
     User,
@@ -23,6 +23,7 @@ import {
     Apple,
     Shield,
     CalendarDays,
+    FileDown,
     ChevronDown,
     ChevronUp,
 } from 'lucide-react';
@@ -38,7 +39,17 @@ import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CURRENCIES } from '@/lib/constants';
 import { getCurrencyDef, getCurrencySymbol, getLocaleCurrency } from '@/lib/currency';
-import { normalizeBillingCycleStart } from '@/utils/billingCycle';
+import {
+    getCurrentBillingCycle,
+    getLast90DaysRange,
+    getPreviousBillingCycle,
+    isDateInBillingCycle,
+    isDateInRange,
+    normalizeBillingCycleStart,
+} from '@/utils/billingCycle';
+import { formatShortDateRange } from '@/utils/dateRangeLabel';
+import { generateMonthlyStatement } from '@/utils/pdfGenerator';
+import { toJsDate } from '@/utils/timestamps';
 
 export default function Settings() {
     const { user, currency, billingCycleStart, updateCurrency, updateBillingCycleStart, logout } = useAuth();
@@ -60,6 +71,10 @@ export default function Settings() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [photoBase64, setPhotoBase64] = useState('');
     const [backfillingTimestamps, setBackfillingTimestamps] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
+    const [pdfExportRange, setPdfExportRange] = useState('current');
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
     const [uploading, setUploading] = useState(false);
     const photoInputRef = useRef(null);
     const selectedCurrency = getCurrencyDef(currency);
@@ -236,6 +251,99 @@ export default function Settings() {
             toast.error('Failed to detect currency preference');
         } finally {
             setSavingCurrency(false);
+        }
+    };
+
+    const statementSelectClass =
+        'flex h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+    const handleDownloadPdf = async () => {
+        if (!user?.uid) return;
+        if (
+            pdfExportRange === 'custom' &&
+            (!customStartDate || !customEndDate || customStartDate > customEndDate)
+        ) {
+            return;
+        }
+        setExportingPdf(true);
+        try {
+            const now = new Date();
+            const currentCycle = getCurrentBillingCycle(now, billingCycleStart);
+            const previousCycle = getPreviousBillingCycle(now, billingCycleStart);
+            const last90 = getLast90DaysRange(now);
+
+            const expensesRef = collection(db, 'users', user.uid, 'expenses');
+            const snapshot = await getDocs(query(expensesRef, orderBy('timestamp', 'desc')));
+            const all = snapshot.docs.map((d) => ({
+                id: d.id,
+                ...d.data(),
+                date: toJsDate(d.data().timestamp),
+            }));
+
+            let cycleDates;
+            let documentTitle;
+            let fileName;
+
+            if (pdfExportRange === 'custom') {
+                const startParts = customStartDate.split('-').map(Number);
+                const endParts = customEndDate.split('-').map(Number);
+                const rangeStart = new Date(startParts[0], startParts[1] - 1, startParts[2], 0, 0, 0, 0);
+                const rangeEnd = new Date(endParts[0], endParts[1] - 1, endParts[2], 23, 59, 59, 999);
+                cycleDates = { startDate: rangeStart, endDate: rangeEnd };
+                documentTitle = 'Financial Statement';
+                fileName = `Excalper_Statement_${customStartDate}_to_${customEndDate}.pdf`;
+            } else {
+                const period =
+                    pdfExportRange === 'current'
+                        ? currentCycle
+                        : pdfExportRange === 'previous'
+                          ? previousCycle
+                          : last90;
+
+                cycleDates = {
+                    startDate: period.startDate,
+                    endDate: period.endDate,
+                };
+
+                documentTitle =
+                    pdfExportRange === '90d' ? 'Financial Statement' : 'Monthly Financial Statement';
+
+                const monthShort = period.startDate.toLocaleString('en-US', { month: 'short' });
+                fileName =
+                    pdfExportRange === '90d'
+                        ? 'Excalper_Statement_Last90Days.pdf'
+                        : `Excalper_Statement_${monthShort}${period.startDate.getFullYear()}.pdf`;
+            }
+
+            const filtered = all.filter((t) => {
+                if (!t.date) return false;
+                if (pdfExportRange === 'custom') {
+                    return isDateInRange(t.date, cycleDates.startDate, cycleDates.endDate);
+                }
+                if (pdfExportRange === '90d') {
+                    return isDateInRange(t.date, last90.startDate, last90.endDate);
+                }
+                const billingSlice =
+                    pdfExportRange === 'current' ? currentCycle : previousCycle;
+                return isDateInBillingCycle(t.date, billingSlice);
+            });
+
+            const userProfile = {
+                displayName: user.displayName || displayName || 'User',
+                email: user.email || '',
+                currency,
+            };
+
+            generateMonthlyStatement(filtered, cycleDates, userProfile, {
+                documentTitle,
+                fileName,
+            });
+            toast.success('Statement downloaded');
+        } catch (err) {
+            console.error('PDF export failed:', err);
+            toast.error('Could not generate PDF. Please try again.');
+        } finally {
+            setExportingPdf(false);
         }
     };
 
@@ -499,6 +607,28 @@ export default function Settings() {
         );
     }
 
+    const nowForPdfLabels = new Date();
+    const pdfLabelCurrentCycle = getCurrentBillingCycle(nowForPdfLabels, billingCycleStart);
+    const pdfLabelPreviousCycle = getPreviousBillingCycle(nowForPdfLabels, billingCycleStart);
+    const pdfLabelLast90 = getLast90DaysRange(nowForPdfLabels);
+    const pdfOptionLabelCurrent = `Current: ${formatShortDateRange(
+        pdfLabelCurrentCycle.startDate,
+        pdfLabelCurrentCycle.endDate
+    )}`;
+    const pdfOptionLabelPrevious = `Previous: ${formatShortDateRange(
+        pdfLabelPreviousCycle.startDate,
+        pdfLabelPreviousCycle.endDate
+    )}`;
+    const pdfOptionLabel90d = `Last 90 Days (${formatShortDateRange(
+        pdfLabelLast90.startDate,
+        pdfLabelLast90.endDate
+    )})`;
+
+    const pdfCustomRangeInvalid =
+        pdfExportRange === 'custom' &&
+        (!customStartDate || !customEndDate || customStartDate > customEndDate);
+    const pdfDownloadDisabled = exportingPdf || pdfCustomRangeInvalid;
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
@@ -701,6 +831,77 @@ export default function Settings() {
                     {savingBillingCycle && (
                         <p className="text-xs text-muted-foreground">Saving preference…</p>
                     )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                        <Download className="h-5 w-5" aria-hidden="true" />
+                        Data &amp; Export
+                    </CardTitle>
+                    <CardDescription>
+                        Export transactions for a billing period, rolling 90 days, or a custom range as a PDF.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <div className="min-w-0 flex-1 space-y-2">
+                            <Label htmlFor="pdf-export-range">Period</Label>
+                            <select
+                                id="pdf-export-range"
+                                value={pdfExportRange}
+                                onChange={(e) => setPdfExportRange(e.target.value)}
+                                disabled={exportingPdf}
+                                className={statementSelectClass}
+                            >
+                                <option value="current">{pdfOptionLabelCurrent}</option>
+                                <option value="previous">{pdfOptionLabelPrevious}</option>
+                                <option value="90d">{pdfOptionLabel90d}</option>
+                                <option value="custom">Custom Date Range</option>
+                            </select>
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={handleDownloadPdf}
+                            disabled={pdfDownloadDisabled}
+                            className="group relative w-full shrink-0 overflow-hidden border-0 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-6 text-white shadow-lg shadow-slate-900/25 transition hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 sm:w-auto"
+                        >
+                            <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 transition group-hover:opacity-100" />
+                            <FileDown className="relative mr-2 h-4 w-4" aria-hidden="true" />
+                            <span className="relative font-semibold tracking-tight">
+                                {exportingPdf ? 'Preparing…' : 'Download'}
+                            </span>
+                        </Button>
+                    </div>
+                    {pdfExportRange === 'custom' && (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="pdf-custom-start">Start date</Label>
+                                <Input
+                                    id="pdf-custom-start"
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                    disabled={exportingPdf}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="pdf-custom-end">End date</Label>
+                                <Input
+                                    id="pdf-custom-end"
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    disabled={exportingPdf}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                        Uses your currency preference. Pick both dates for a custom export. Download stays disabled until
+                        start and end are set (start cannot be after end).
+                    </p>
                 </CardContent>
             </Card>
 

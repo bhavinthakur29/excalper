@@ -8,7 +8,7 @@ import { Calendar, Plus, User, ArrowUpRight } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-toastify';
 import { toJsDate } from '../utils/timestamps';
-import { getCurrentBillingCycle, isDateInBillingCycle } from '../utils/billingCycle';
+import { getCurrentBillingCycle, getDaysRemainingInCycle, isDateInBillingCycle } from '../utils/billingCycle';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -234,6 +234,13 @@ export default function Home() {
     }
 
     const cycleCashFlowLow = cycleIncome > 0 && cycleNet < cycleIncome * 0.1;
+    const daysRemainingInCycle = getDaysRemainingInCycle(currentBillingCycle.endDate);
+    const lowBalanceCycleWarning =
+        daysRemainingInCycle <= 0
+            ? "Warning: you have less than 10% of this cycle's income remaining—stretch what's left carefully through the end of this billing cycle."
+            : daysRemainingInCycle === 1
+              ? "Warning: you have less than 10% of this cycle's income remaining to last you the next day."
+              : `Warning: you have less than 10% of this cycle's income remaining to last you the next ${daysRemainingInCycle} days.`;
     const spendingPercentage = cycleIncome > 0 ? (cycleSpent / cycleIncome) * 100 : 0;
     const savingsPercentage = cycleIncome > 0 ? (cycleNet / cycleIncome) * 100 : 0;
     const spendingProgressColor =
@@ -311,9 +318,7 @@ export default function Home() {
                                     )}
                                 />
                                 {cycleCashFlowLow && (
-                                    <p className="mt-2 text-sm font-medium text-orange-200">
-                                        Warning: you have less than 10% of this cycle&apos;s income remaining.
-                                    </p>
+                                    <p className="mt-2 text-sm font-medium text-orange-200">{lowBalanceCycleWarning}</p>
                                 )}
                             </div>
 
@@ -414,8 +419,8 @@ export default function Home() {
                             </div>
                         ) : (
                             <>
-                                <div className="w-full h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                <div className="w-full flex-1" style={{ minHeight: '250px' }}>
+                                    <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                                         <PieChart>
                                             <Pie
                                                 data={monthlyExpenseBreakdown}
